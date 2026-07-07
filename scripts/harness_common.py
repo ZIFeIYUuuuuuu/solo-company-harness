@@ -330,6 +330,13 @@ def make_initial_state(
             "expected_output": expected_output,
         },
         "context": {"files_read": [], "constraints": [], "ssot_used": []},
+        "gates": {
+            "first_principles": [],
+            "assumptions": [],
+            "adversarial_findings": [],
+            "edge_cases": [],
+            "rejected_options": [],
+        },
         "contract": {
             "planned_changes": [],
             "boundaries": [],
