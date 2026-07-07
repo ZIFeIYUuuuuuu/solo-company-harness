@@ -1,6 +1,6 @@
 ---
 name: solo-company-harness
-description: Use when the user is building, modifying, debugging, reviewing, or shipping software as a one-person company with AI coding. This skill runs a lightweight solo-company workflow and AI Coding Harness for project work, feature delivery, bug fixing, refactoring, product iteration, validation, release, feedback, case logs, playbooks, and reusable learning.
+description: Use when the user is building, modifying, debugging, reviewing, or shipping software as a one-person company with AI coding. This skill runs a lightweight solo-company workflow and AI Coding Harness for project work, feature delivery, bug fixing, refactoring, product iteration, first-principles checks, adversarial review, validation, release, feedback, case logs, playbooks, and reusable learning.
 ---
 
 # Solo Company Harness
@@ -109,6 +109,16 @@ Update the run as work proceeds:
 python <skill-dir>/scripts/update_run.py <project-root> --changed-file src/app.ts --decision "Reuse existing router"
 ```
 
+Record decision gates during the run:
+
+```bash
+python <skill-dir>/scripts/update_run.py <project-root> --first-principle "The user needs a reliable saved result, not a new abstraction"
+python <skill-dir>/scripts/update_run.py <project-root> --assumption "Existing auth middleware already rejects expired sessions"
+python <skill-dir>/scripts/update_run.py <project-root> --adversarial-finding "A passing unit test may miss the browser callback route"
+python <skill-dir>/scripts/update_run.py <project-root> --edge-case "Empty project with no package.json"
+python <skill-dir>/scripts/update_run.py <project-root> --rejected-option "Add a new queue worker; unnecessary for local-only scope"
+```
+
 Detect risk:
 
 ```bash
@@ -180,9 +190,23 @@ Use `high` when the task affects payments, auth, security, production data, migr
 
 Risk controls:
 
-- Low: use compact run card, focused verification, concise final report.
-- Medium: write a clear contract before edits, run relevant checks, report risks.
-- High: include rollback plan, stronger verification, release mode, and explicit residual risk.
+- Low: use compact run card, optional decision gates, focused verification, concise final report.
+- Medium: write a clear contract before edits, run a brief first-principles gate, run a brief adversarial review, run relevant checks, report risks.
+- High: require first-principles and adversarial gates, include rollback plan, stronger verification, release mode, and explicit residual risk.
+
+## Decision Gates
+
+Use two lightweight gates to improve accuracy before the model commits to a path.
+
+First-principles gate asks what must be true, what is actually necessary, and which assumptions are being smuggled in by habit. Use it before the Contract state for medium/high-risk work, or when the task feels vague, over-engineered, or copied from a prior pattern.
+
+Adversarial review asks how the plan could fail, which evidence could be misleading, and which edge cases would embarrass the solution after release. Use it before the Verify state for medium/high-risk work, or when the change touches auth, data, payments, external integrations, deployment, user-facing workflows, or irreversible operations.
+
+Keep both gates compact:
+
+- First principles: necessary user outcome, hard constraints, assumptions, simpler rejected options.
+- Adversarial review: likely failure modes, false confidence signals, edge cases, missing checks.
+- Record important gate outputs with `update_run.py` so they appear in the case log.
 
 ## State 0: Intent
 
@@ -260,6 +284,13 @@ docs/case-log/
 
 Before meaningful edits, state the execution contract.
 
+For medium/high-risk work, run the first-principles gate before writing the contract:
+
+- What user or business outcome is truly required?
+- What constraints are real rather than inherited from the current implementation?
+- What assumptions need verification?
+- What simpler option was rejected and why?
+
 For low-risk work, keep it to a few bullets.
 
 For medium or high-risk work, include:
@@ -292,6 +323,13 @@ Use subagents only for independent bounded work such as code search, review, tes
 ## State 4: Verify
 
 Do not claim completion without evidence.
+
+Before running checks for medium/high-risk work, run the adversarial review gate:
+
+- How could this fail in the real user path?
+- Which passing check could create false confidence?
+- Which edge cases, empty states, permissions, network failures, data states, or platform constraints matter?
+- What evidence would change the release decision?
 
 Choose checks based on risk:
 
@@ -410,8 +448,10 @@ Use this for low-risk tasks:
 ```text
 Intent: What are we trying to achieve?
 Context: What must be known before changing code?
+First Principles: What is truly necessary, and what are we assuming?
 Contract: What will change, and what is out of bounds?
 Execute: Make the smallest correct change.
+Adversarial Review: How could this fail, and what proof would catch it?
 Verify: Prove it works.
 Release: Choose local-only, dogfood, seed-user, beta, or full.
 Observe: Record what happened.
