@@ -59,6 +59,22 @@ Files read:
 SSOT used:
 {markdown_list(state.get("context", {}).get("ssot_used", []))}
 
+## Gates
+First-principles check:
+{markdown_list(state.get("gates", {}).get("first_principles", []))}
+
+Assumptions:
+{markdown_list(state.get("gates", {}).get("assumptions", []))}
+
+Adversarial findings:
+{markdown_list(state.get("gates", {}).get("adversarial_findings", []))}
+
+Edge cases:
+{markdown_list(state.get("gates", {}).get("edge_cases", []))}
+
+Rejected options:
+{markdown_list(state.get("gates", {}).get("rejected_options", []))}
+
 ## Changes
 {markdown_list(state.get("execution", {}).get("changed_files", []))}
 
