@@ -12,6 +12,11 @@ Intent -> Context -> Contract -> Execute -> Verify -> Release -> Observe -> Dist
 
 The goal is simple: ship faster without losing correctness, project memory, verification evidence, or reusable learning.
 
+Before implementation, the harness resolves one of two modes:
+
+- **Design-Locked**: an approved module design and user story with testable acceptance criteria exist, so implementation proceeds without reopening settled decisions.
+- **Discovery-Gated**: the module contract is missing, draft, stale, or incomplete; the harness asks targeted questions and allows draft documentation, but blocks production code until the owner approves the contract.
+
 ## What It Does
 
 - Initializes a project SSOT (single source of truth) for company, product, customer, and system knowledge.
@@ -96,6 +101,12 @@ Run checks:
 python ~/.codex/skills/solo-company-harness/scripts/run_checks.py . --auto
 ```
 
+Resolve a module mode:
+
+```bash
+python ~/.codex/skills/solo-company-harness/scripts/resolve_mode.py . --module assembly-planner
+```
+
 Finish a run:
 
 ```bash
@@ -132,6 +143,7 @@ scripts/
   update_playbook.py
   propose_skill_update.py
   promote_experience.py
+  resolve_mode.py
 ```
 
 ## Design Principles
@@ -154,6 +166,11 @@ Intent -> Context -> Contract -> Execute -> Verify -> Release -> Observe -> Dist
 ```
 
 目标很简单：让你更快交付，同时不丢失项目知识、验证结果、决策记录和可复用经验。
+
+开始编码前，Harness 会先判断模块是否已经具备批准的设计文档和用户故事：
+
+- **Design-Locked**：设计和用户故事已批准，直接按合同实现。
+- **Discovery-Gated**：设计缺失、仍为草稿或验收标准不完整，只能先追问和补齐文档，不能修改生产代码。
 
 ## 它能做什么
 

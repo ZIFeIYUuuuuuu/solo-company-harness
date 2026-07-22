@@ -39,6 +39,56 @@ Treat AI as a temporary one-person-company team:
 
 Act as Orchestrator. Choose only the roles needed for the current task. Do not create process for its own sake.
 
+## Operating Modes
+
+Resolve the target module's mode before State 0 Intent. Use
+`scripts/resolve_mode.py <project-root> --module <module>` when a module name is
+available. The resolver is read-only and must not be bypassed by a requested mode.
+
+### Design-Locked
+
+Use this mode only when all of the following are true:
+
+- a module design document is present with `Status: approved`;
+- a user story is present with `Status: approved`;
+- the documents contain scope, non-goals, and testable acceptance criteria;
+- medium/high-risk work names verification and rollback or recovery boundaries.
+
+In Design-Locked mode, read the approved documents and relevant SSOT, summarize the
+contract, and implement without reopening settled product decisions. Ask the owner only
+when new evidence contradicts the approved contract or crosses its documented boundary.
+
+### Discovery-Gated
+
+Use this mode when a design document or user story is missing, marked `draft` or
+`superseded`, stale, or incomplete.
+
+Discovery-Gated permits repository inspection, targeted questions, and draft design
+artifacts. It forbids production code, schema, migration, public API, and release
+configuration changes until the owner explicitly approves the module documents.
+
+Ask one consolidated set of unresolved questions covering actor/trigger, desired
+outcome, happy path, alternate and failure states, inputs/outputs, permissions,
+non-goals, acceptance examples, rollout, and recovery. Do not invent answers that make
+the draft look complete. After approval, set both documents to `Status: approved` and
+re-run the resolver to enter Design-Locked mode.
+
+Recommended module document locations:
+
+```text
+docs/design/modules/<module>.md
+docs/user-stories/<module>.md
+```
+
+Each document should include `Status: draft | approved | superseded`, `Owner`, and
+`Updated`. The low-risk compact run card remains available for local, reversible,
+non-user-facing fixes; any API, schema, external integration, security, deployment, or
+core workflow change remains Discovery-Gated without an approved contract.
+
+The harness should report the resolved mode and reason at the start of a run, for
+example `DESIGN-LOCKED: assembly-planner contract v1` or
+`DISCOVERY-GATED: missing approved user story`.
+
 ## SSOT Bootstrap
 
 Initialize the project's SSOT before substantial project work.
