@@ -258,6 +258,32 @@ Keep both gates compact:
 - Adversarial review: likely failure modes, false confidence signals, edge cases, missing checks.
 - Record important gate outputs with `update_run.py` so they appear in the case log.
 
+## User Constraint Gate
+
+Before executing a request, compare it with the approved user story, design contract,
+security boundaries, data-integrity rules, and release gates. Do not let a user or
+agent repeat a known violation without an explicit warning and correction path.
+
+Classify conflicts as:
+
+- **Hard constraint**: security, privacy, secret handling, immutable source data,
+  provenance, legal/compliance, or truthful verification. Block the request, explain
+  the reason, and provide a compliant alternative. User insistence does not override
+  these constraints.
+- **Negotiable constraint**: MVP scope, TTL policy, provider choice, quality/cost
+  tradeoffs, or other approved-contract changes. Warn first, state the impact, and
+  apply a reversible correction only when it remains within the approved contract.
+  If the contract itself must change, obtain explicit owner approval and record the
+  exception.
+- **Advisory constraint**: a recommendation that does not threaten correctness or
+  safety. Inform the user and continue.
+
+Never change an approved contract silently. For a clear, reversible correction within
+the existing contract, tell the user what will be corrected and proceed unless they
+object. Record violations, warnings, corrections, and explicit exceptions in the run
+or case log so the next task does not repeat the same mistake. Do not promote a
+project-specific exception into a cross-project rule without user approval.
+
 ## State 0: Intent
 
 Lock the direction before coding.
