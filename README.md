@@ -1,8 +1,12 @@
 # Solo Company Harness
 
-English | [中文](#中文)
+面向独立开发者、一人公司和 AI Coding 工作流的项目交付 Skill。
 
-Solo Company Harness is a Codex skill for solo founders and one-person companies who use AI coding to build, debug, verify, release, and continuously improve software projects.
+[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-2563EB?style=flat-square)](https://agentskills.io)
+[![Codex](https://img.shields.io/badge/Codex-Skill-10B981?style=flat-square)](https://github.com/openai/codex)
+[![License](https://img.shields.io/badge/License-TBD-F59E0B?style=flat-square)](#许可证)
+
+这个仓库把一人公司使用 AI 编写软件时反复遇到的工作方法，整理成一个可以被 Agent 直接加载的结构化 Skill。
 
 It turns every AI coding task into a lightweight operating loop:
 
@@ -10,12 +14,14 @@ It turns every AI coding task into a lightweight operating loop:
 Intent -> Context -> Contract -> Execute -> Verify -> Release -> Observe -> Distill
 ```
 
-The goal is simple: ship faster without losing correctness, project memory, verification evidence, or reusable learning.
+目标很简单：更快交付，同时不丢失正确性、项目记忆、验证证据和可复用经验。
 
 Before implementation, the harness resolves one of two modes:
 
 - **Design-Locked**: an approved module design and user story with testable acceptance criteria exist, so implementation proceeds without reopening settled decisions.
 - **Discovery-Gated**: the module contract is missing, draft, stale, or incomplete; the harness asks targeted questions and allows draft documentation, but blocks production code until the owner approves the contract.
+
+它不是一个代码生成模板，也不是一套强制性的企业流程。它提供的是一组轻量门禁，让 Agent 在真正改代码前先确认合同，在交付前证明真实路径。
 
 ## What It Does
 
@@ -32,10 +38,10 @@ Before implementation, the harness resolves one of two modes:
 
 ## Install
 
-Copy this folder into your Codex skills directory:
+Clone this repository into your Codex skills directory:
 
 ```bash
-cp -R solo-company-harness ~/.codex/skills/
+git clone https://github.com/ZIFeIYUuuuuuu/solo-company-harness.git ~/.codex/skills/solo-company-harness
 ```
 
 On Windows PowerShell:
@@ -185,12 +191,36 @@ Intent -> Context -> Contract -> Execute -> Verify -> Release -> Observe -> Dist
 - 把 Skill 改进建议放入审核队列。
 - 经用户审核后，把跨项目经验写入 Skill 的 approved experience。
 
+## 用户约束门
+
+这个 Skill 不只约束 Agent，也会在用户请求违反项目合同的时候主动提醒用户，避免错误反复发生。
+
+- **硬约束**：安全、隐私、密钥、数据不可变性、来源追溯、法律合规和真实验收。违反时阻止执行，说明风险并给出替代方案；用户坚持也不能绕过。
+- **可协商约束**：MVP 范围、TTL、模型选择、成本和质量取舍。先说明影响，再采用可逆修正；如果需要改变批准合同，要求用户明确批准并记录例外。
+- **建议约束**：只影响效率或工程质量。主动提醒，但不无故阻塞任务。
+
+任何自动修正都必须先告知用户。已批准的合同不能被静默改变，项目例外也不能自动升级成跨项目规则。
+
+## 真实链路门禁
+
+涉及 AI Provider、上传、回调、认证、同步或公网资源时，必须优先验证一条真实端到端路径：
+
+```text
+真实输入 -> 本地应用 -> 外部服务 -> 真实结果 -> 本地持久化 -> 用户可见结果
+```
+
+局部测试、模拟 Provider、构建成功或浏览器页面能打开，都不能单独证明产品路径可用。
+
+跨服务配置也是系统代码的一部分，必须在 `.env`、Docker、启动脚本、反向代理、远端存储、文档和测试命令之间保持一致。一个生产能力只保留一个 canonical path，避免重复网关、重复存储和重复 secret。
+
+先完成一个可证明的 MVP 闭环，再增加多窗口、replay、审计、策略和质量优化。传输可用性必须先于模型语义质量。
+
 ## 安装
 
-把本文件夹复制到 Codex skills 目录：
+把仓库克隆到 Codex skills 目录：
 
 ```bash
-cp -R solo-company-harness ~/.codex/skills/
+git clone https://github.com/ZIFeIYUuuuuuu/solo-company-harness.git ~/.codex/skills/solo-company-harness
 ```
 
 Windows PowerShell：
@@ -282,3 +312,26 @@ python ~/.codex/skills/solo-company-harness/scripts/promote_experience.py . --sk
 - 重复经验沉淀成项目 playbook。
 - 只有经过用户审核的跨项目经验，才写入 Skill 级 approved experience。
 - 不因为一次运行结果就静默修改 Skill 本体。
+
+## 贡献
+
+欢迎提交 Issue、Pull Request 和跨项目实践经验。
+
+适合贡献的内容包括：
+
+- 可复用的 Harness 工作流；
+- 针对真实失败模式的验证脚本；
+- 不依赖特定项目的 playbook；
+- 对用户约束、风险门禁和验收流程的改进。
+
+提交前请确认：
+
+- 不包含 API Key、secret、个人路径或项目私有数据；
+- 修改有清晰的使用场景、边界和验证方式；
+- README、SKILL.md 和脚本行为保持一致。
+
+## 许可证
+
+当前仓库暂未声明许可证。正式开源发布前，请在仓库根目录补充明确的 `LICENSE` 文件，并同步更新上方徽章。
+
+由 [ZIFeIYUuuuuuu](https://github.com/ZIFeIYUuuuuuu) 维护。
