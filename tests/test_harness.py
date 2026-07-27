@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+import subprocess
 import unittest
 from pathlib import Path
 
@@ -35,6 +36,33 @@ class HarnessTest(unittest.TestCase):
         self.assertEqual(state["delivery_contract"]["status"], "compact-approved")
         self.assertEqual(validate_contract(state), [])
         self.assertEqual(state["verification"]["required_evidence_level"], 0)
+
+    def test_explore_start_does_not_write_full_contract_file(self) -> None:
+        with self.subTest(mode="explore"):
+            import tempfile
+
+            with tempfile.TemporaryDirectory() as project:
+                result = subprocess.run(
+                    [
+                        sys.executable,
+                        str(ROOT / "scripts" / "start_run.py"),
+                        project,
+                        "--title",
+                        "prototype",
+                        "--goal",
+                        "Try a local idea",
+                        "--mode",
+                        "explore",
+                    ],
+                    check=True,
+                    capture_output=True,
+                    text=True,
+                )
+                run_id = next(line.split(":", 1)[1].strip() for line in result.stdout.splitlines() if line.startswith("run_id:"))
+                run_dir = Path(project) / ".harness" / "runs" / run_id
+                self.assertTrue((run_dir / "state.json").exists())
+                self.assertTrue((run_dir / "events.jsonl").exists())
+                self.assertFalse((run_dir / "delivery-contract.md").exists())
 
     def test_delivery_contract_requires_full_fields(self) -> None:
         state = make_initial_state(

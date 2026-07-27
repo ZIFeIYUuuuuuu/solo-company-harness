@@ -63,7 +63,9 @@ def main() -> int:
         operating_mode=operating_mode,
     )
     path = save_state(root, state)
-    contract_path = write_delivery_contract(root, state)
+    contract_path = None
+    if operating_mode != "explore":
+        contract_path = write_delivery_contract(root, state)
     append_event(root, run_id, "start", {"title": title, "goal": goal, "risk": risk})
     print(f"run_id: {run_id}")
     print(f"risk: {risk['level']}")
@@ -72,10 +74,11 @@ def main() -> int:
     for reason in risk.get("reasons", []):
         print(f"- {reason}")
     print(f"state: {path}")
-    print(f"contract: {contract_path}")
     if operating_mode == "explore":
+        print("contract: compact state only")
         print("next: explore locally; use delivery mode before production release")
     else:
+        print(f"contract: {contract_path}")
         print("next: fill the delivery contract, then run contract.py validate and contract.py approve")
     return 0
 

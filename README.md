@@ -27,7 +27,9 @@ AI Coding 已经可以在几分钟内生成页面、接口和测试，但一个�
 
 Solo Company Harness 把这些问题变成 Agent 可以持续执行的项目工作流，适合独立开发者、solo founder、一人公司和使用 AI Coding 的小团队。
 
-它不是代码生成模板，也不是一份越来越长的 Prompt。它更像一套轻量的项目交付操作系统：保留项目记忆，约束任务边界，记录决策和证据，并把重复经验沉淀成可复用规则。
+它不是代码生成模板，也不是一份越来越长的 Prompt。它更准确地说是一层 AI 软件交付控制层：保留项目记忆，约束任务边界，记录决策和证据，并把重复经验沉淀成可复用规则。
+
+核心规则保持在轻量的 `SKILL.md` 中，交付合同、证据等级和平台说明放在 `references/`，按任务模式按需读取，避免简单任务承担完整流程的上下文成本。
 
 ## 核心工作流
 
@@ -85,7 +87,7 @@ docs/case-log/
 
 | 模式 | 适合 | 默认行为 |
 | --- | --- | --- |
-| `explore` | 原型、一次性脚本、局部实验 | 自动生成紧凑合同，不要求完整批准，不允许把结果当成生产交付 |
+| `explore` | 原型、一次性脚本、局部实验 | 只保留紧凑 state，不生成完整合同文件，不允许把结果当成生产交付 |
 | `delivery` | 正式功能和用户可见改动 | 完整交付合同、验收证据和回滚边界 |
 | `high-assurance` | 支付、认证、迁移、生产数据和公开发布 | 更严格的决策门、证据等级和恢复要求 |
 
@@ -202,6 +204,11 @@ python ~/.codex/skills/solo-company-harness/scripts/start_run.py . \
 ```text
 .harness/runs/<run-id>/state.json
 .harness/runs/<run-id>/events.jsonl
+```
+
+`delivery` 和 `high-assurance` 模式还会生成：
+
+```text
 .harness/runs/<run-id>/delivery-contract.md
 ```
 
@@ -256,6 +263,11 @@ python ~/.codex/skills/solo-company-harness/scripts/finish_run.py . \
 SKILL.md                         Agent 核心工作规则
 agents/openai.yaml               Codex UI 元信息
 references/approved-experience.md 跨项目批准经验
+references/                         按模式按需加载的详细规则
+  operating-modes.md
+  delivery-contract.md
+  evidence-levels.md
+  platform-adapters.md
 scripts/                         可执行的 Harness 工具
   init_ssot.py                   初始化项目事实源
   init_agents.py                 生成项目级 AGENTS.md
@@ -288,7 +300,7 @@ scripts/                         可执行的 Harness 工具
 
 生产环境仍然需要你自己的密钥管理、权限控制、备份、监控和发布审批。不要把 Skill 的流程记录当成安全控制本身。
 
-当前主要验证环境是 Codex。核心状态、合同和证据格式保持平台中立，但安装路径、调用名称和 `agents/openai.yaml` 是 Codex 适配层；其他 Agent 平台需要单独验证，不应默认视为兼容。
+当前主要验证环境是 Codex。核心状态、合同和证据格式保持平台中立，但安装路径、调用名称和 `agents/openai.yaml` 是 Codex 适配层；其他 Agent 平台需要单独适配和验证，不应默认视为兼容。
 
 项目仍处于早期维护阶段，长期兼容性和第三方集成覆盖范围尚未承诺。请查看 [`PLATFORM.md`](./PLATFORM.md) 和 [`CHANGELOG.md`](./CHANGELOG.md)，并在关键发布前自行运行测试和真实链路验证。
 
@@ -326,7 +338,7 @@ scripts/                         可执行的 Harness 工具
 
 ## English
 
-Solo Company Harness is an Agent Skill for solo founders and small teams using AI Coding. It turns software work into an observable delivery loop with project memory, risk-aware execution, delivery contracts, anti-gaming acceptance criteria, verification evidence, release modes, and reusable learning.
+Solo Company Harness is an Agent Skill for solo founders and small teams using AI Coding. It is a lightweight delivery control layer with project memory, progressive operating modes, delivery contracts, anti-gaming acceptance criteria, verification evidence, release modes, and reusable learning.
 
 Quick install:
 

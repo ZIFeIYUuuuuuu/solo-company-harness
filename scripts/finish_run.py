@@ -55,6 +55,36 @@ def evidence_gate(state: dict) -> str | None:
     return None
 
 
+def delivery_contract_log(state: dict) -> str:
+    contract = state.get("delivery_contract", {})
+    if contract.get("status") == "compact-approved":
+        return f"""## Explore Card
+Mode: explore
+Why: {contract.get('why', '')}
+Acceptance:
+{markdown_list(contract.get('acceptance', []))}
+Boundary:
+{markdown_list(contract.get('boundaries', []))}
+"""
+    return f"""## Delivery Contract
+Status: {contract.get('status', 'legacy or not initialized')}
+Why:
+{contract.get('why', '')}
+
+Acceptance criteria:
+{markdown_list(contract.get('acceptance', []))}
+
+Anti-gaming rules:
+{markdown_list(contract.get('anti_cheat', []))}
+
+Infeasible or blocked paths:
+{markdown_list(contract.get('infeasible', []))}
+
+Alternatives and trade-offs:
+{markdown_list(contract.get('alternatives', []))}
+"""
+
+
 def write_case_log(root: Path, state: dict) -> Path:
     title = state.get("title") or state["run_id"]
     path = unique_path(root / "docs" / "case-log" / f"{today()}-{slugify(title)}.md")
@@ -92,22 +122,7 @@ Edge cases:
 Rejected options:
 {markdown_list(state.get("gates", {}).get("rejected_options", []))}
 
-## Delivery Contract
-Status: {state.get("delivery_contract", {}).get("status", "legacy or not initialized")}
-Why:
-{state.get("delivery_contract", {}).get("why", "")}
-
-Acceptance criteria:
-{markdown_list(state.get("delivery_contract", {}).get("acceptance", []))}
-
-Anti-gaming rules:
-{markdown_list(state.get("delivery_contract", {}).get("anti_cheat", []))}
-
-Infeasible or blocked paths:
-{markdown_list(state.get("delivery_contract", {}).get("infeasible", []))}
-
-Alternatives and trade-offs:
-{markdown_list(state.get("delivery_contract", {}).get("alternatives", []))}
+{delivery_contract_log(state)}
 
 ## Changes
 {markdown_list(state.get("execution", {}).get("changed_files", []))}
