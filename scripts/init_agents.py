@@ -65,6 +65,11 @@ Start a run:
 python <skill-dir>/scripts/start_run.py <project-root> --title "<title>" --goal "<goal>"
 ```
 
+Use `--mode explore` for a local prototype, `--mode delivery` for normal product
+work, and `--mode high-assurance` for auth, payments, migrations, production data,
+deployment, or public release. Auto mode chooses from risk and cannot lower a high
+risk task.
+
 Before production edits, complete and approve the delivery contract created for the run:
 
 ```bash
@@ -89,7 +94,11 @@ Detect tests and run checks:
 ```bash
 python <skill-dir>/scripts/detect_tests.py <project-root> --write-run
 python <skill-dir>/scripts/run_checks.py <project-root> --auto
+python <skill-dir>/scripts/record_evidence.py <project-root> --level 3 --source real-path --summary "<real path evidence>"
 ```
+
+Local commands record L1 evidence. Real integrations and dogfood use require an
+explicit evidence receipt at L2-L4.
 
 Finish a run:
 
@@ -109,7 +118,7 @@ python <skill-dir>/scripts/init_agents.py <project-root> --skill-path <skill-dir
 - `medium`: user-facing behavior, shared code, APIs, data shape, integrations, project structure, or deployment config.
 - `high`: auth, payments, security, production data, migrations, irreversible operations, broad architecture, or public release.
 
-For every run, require an approved delivery contract before production edits. For
+For every delivery or high-assurance run, require an approved delivery contract before production edits. Explore runs use a compact contract and must not be presented as production. For
 medium/high risk, require a clear verification plan, rollback or recovery story, and
 residual-risk report. If the contract changes, re-approval is required.
 {END}

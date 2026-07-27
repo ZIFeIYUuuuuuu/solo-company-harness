@@ -79,6 +79,23 @@ docs/case-log/
 
 根据任务描述和文件范围识别 low、medium、high 风险。登录、支付、生产数据、迁移、部署和安全边界会自动进入更严格的验证路径。
 
+### 渐进式使用模式
+
+风险会自动映射到不同的流程重量：
+
+| 模式 | 适合 | 默认行为 |
+| --- | --- | --- |
+| `explore` | 原型、一次性脚本、局部实验 | 自动生成紧凑合同，不要求完整批准，不允许把结果当成生产交付 |
+| `delivery` | 正式功能和用户可见改动 | 完整交付合同、验收证据和回滚边界 |
+| `high-assurance` | 支付、认证、迁移、生产数据和公开发布 | 更严格的决策门、证据等级和恢复要求 |
+
+也可以手动指定模式，但不能用低级模式绕过高风险任务的最低要求：
+
+```bash
+python ~/.codex/skills/solo-company-harness/scripts/start_run.py . \
+  --title 'try parser' --goal 'Explore a parser prototype' --mode explore
+```
+
 ### 交付合同
 
 在正式修改生产代码之前，要求任务明确写出：
@@ -105,6 +122,28 @@ docs/case-log/
 ### 验证与证据
 
 自动识别项目中的测试、类型检查、Lint 和构建命令，运行后把结果写入 run 记录。涉及外部服务、上传、回调、认证或同步时，优先验证一条真实端到端路径，而不是只看局部测试或构建是否成功。
+
+验证证据分为五级：
+
+```text
+L0 static      静态检查
+L1 local       本地测试、类型检查、构建或手动 smoke
+L2 integration 集成测试或模拟外部服务
+L3 real-path   真实第三方服务和真实用户链路
+L4 dogfood     自己或种子用户实际使用
+```
+
+`delivery` 和 `high-assurance` run 会声明最低证据等级。补充真实路径或 dogfood 证据：
+
+```bash
+python ~/.codex/skills/solo-company-harness/scripts/record_evidence.py . \
+  --level 3 --source real-path \
+  --summary '真实文件经过 Provider 处理并在页面展示结果' \
+  --artifact 'logs/real-upload.txt' \
+  --artifact 'docs/case-log/real-upload.md'
+```
+
+脚本会记录证据收据，但不会假装替你验证外部系统。真实支付、回调、异步任务和远端数据仍然需要项目自己的验证 recipe、沙箱账号和可追溯产物。
 
 ### 经验沉淀
 
@@ -223,6 +262,7 @@ scripts/                         可执行的 Harness 工具
   start_run.py                   创建一次可追踪任务
   contract.py                    创建、验证和批准交付合同
   resolve_mode.py                判断模块是否准备好进入实现
+  record_evidence.py             记录 L0-L4 验证证据
   update_run.py                  记录决策、变更和观察
   detect_risk.py                 识别任务风险
   detect_tests.py                识别验证命令
@@ -247,6 +287,10 @@ scripts/                         可执行的 Harness 工具
 这个 Skill 适合软件项目的规划、开发、调试、测试、发布和复盘。它不会自动替你决定产品方向，也不会保证 Agent 不犯错。它做的是把目标、边界、证据和失败状态显式化，让错误更早暴露、更容易回滚。
 
 生产环境仍然需要你自己的密钥管理、权限控制、备份、监控和发布审批。不要把 Skill 的流程记录当成安全控制本身。
+
+当前主要验证环境是 Codex。核心状态、合同和证据格式保持平台中立，但安装路径、调用名称和 `agents/openai.yaml` 是 Codex 适配层；其他 Agent 平台需要单独验证，不应默认视为兼容。
+
+项目仍处于早期维护阶段，长期兼容性和第三方集成覆盖范围尚未承诺。请查看 [`PLATFORM.md`](./PLATFORM.md) 和 [`CHANGELOG.md`](./CHANGELOG.md)，并在关键发布前自行运行测试和真实链路验证。
 
 ## 来源与致谢
 
@@ -296,4 +340,4 @@ Then invoke it in Codex with:
 Use $solo-company-harness for this project.
 ```
 
-Read [SKILL.md](./SKILL.md) for the full operating rules. This project is released under the [MIT License](./LICENSE).
+Read [SKILL.md](./SKILL.md) for the full operating rules. See [PLATFORM.md](./PLATFORM.md) for host limitations and [CHANGELOG.md](./CHANGELOG.md) for version history. This project is released under the [MIT License](./LICENSE).

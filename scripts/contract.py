@@ -32,6 +32,7 @@ PLACEHOLDER_RE = re.compile(r"\b(?:tbd|todo|todo:|待填写|待补充|未决定|
 
 def ensure_contract(state: dict[str, Any]) -> dict[str, Any]:
     contract = state.setdefault("delivery_contract", {})
+    contract.setdefault("mode", state.get("operating_mode", "delivery"))
     defaults: dict[str, Any] = {
         "status": "draft",
         "approved_by": "",
@@ -73,9 +74,11 @@ def contains_placeholder(value: Any) -> bool:
 
 def validate_contract(state: dict[str, Any], require_approval: bool = False) -> list[str]:
     contract = ensure_contract(state)
+    mode = state.get("operating_mode", contract.get("mode", "delivery"))
     errors: list[str] = []
 
-    for field in ("why", "approach", "rollback"):
+    required_text = ("why", "approach") if mode == "explore" else ("why", "approach", "rollback")
+    for field in required_text:
         if not str(contract.get(field, "")).strip():
             errors.append(f"missing contract.{field}")
 
@@ -91,15 +94,19 @@ def validate_contract(state: dict[str, Any], require_approval: bool = False) -> 
                 if not str(item.get(field, "")).strip():
                     errors.append(f"acceptance[{index}] missing {field}")
 
-    for field in LIST_FIELDS:
+    required_lists = ("boundaries", "anti_cheat", "verification") if mode == "explore" else LIST_FIELDS
+    for field in required_lists:
         if not contract.get(field):
             errors.append(f"missing contract.{field}; explicitly record none identified when applicable")
 
     if contains_placeholder(contract):
         errors.append("contract contains a placeholder such as TBD or TODO")
 
-    if require_approval and contract.get("status") != "approved":
-        errors.append(f"contract status is {contract.get('status', 'missing')}, expected approved")
+    if require_approval:
+        allowed = {"compact-approved"} if mode == "explore" else {"approved"}
+        if contract.get("status") not in allowed:
+            expected = "compact-approved" if mode == "explore" else "approved"
+            errors.append(f"contract status is {contract.get('status', 'missing')}, expected {expected}")
     return errors
 
 
@@ -176,12 +183,17 @@ def main() -> int:
                     changed = True
         if not changed:
             raise SystemExit("update requires at least one contract field")
-        if contract.get("status") == "approved":
-            contract["status"] = "draft"
-            contract["approved_by"] = ""
-            contract["approved_at"] = ""
-            state["status"] = "contract_pending"
-            print("contract: approval invalidated by substantive update")
+        if contract.get("status") in {"approved", "compact-approved"}:
+            if state.get("operating_mode") == "explore":
+                contract["status"] = "compact-approved"
+                state["status"] = "in_progress"
+                print("contract: compact explore contract refreshed")
+            else:
+                contract["status"] = "draft"
+                contract["approved_by"] = ""
+                contract["approved_at"] = ""
+                state["status"] = "contract_pending"
+                print("contract: approval invalidated by substantive update")
         write_delivery_contract(root, state)
         path = save_state(root, state)
         append_event(root, run_id, "contract_update", {"state": str(path)})
@@ -202,7 +214,7 @@ def main() -> int:
     if errors:
         print_errors(errors)
         return 1
-    contract["status"] = "approved"
+    contract["status"] = "compact-approved" if state.get("operating_mode") == "explore" else "approved"
     contract["approved_by"] = args.approved_by.strip()
     contract["approved_at"] = now_iso()
     state["status"] = "in_progress"

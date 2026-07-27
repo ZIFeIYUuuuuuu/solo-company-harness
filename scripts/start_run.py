@@ -12,6 +12,8 @@ from harness_common import (
     ensure_harness,
     make_initial_state,
     project_root,
+    required_evidence_level,
+    resolve_operating_mode,
     save_state,
     slugify,
     write_delivery_contract,
@@ -27,6 +29,12 @@ def main() -> int:
     parser.add_argument("--success", action="append", default=[], help="Success criterion; repeatable.")
     parser.add_argument("--expected-output", default="", help="Expected output.")
     parser.add_argument("--risk", choices=["auto", "low", "medium", "high"], default="auto", help="Risk level.")
+    parser.add_argument(
+        "--mode",
+        choices=["auto", "explore", "delivery", "high-assurance"],
+        default="auto",
+        help="Operating weight. Auto maps low/medium/high risk to explore/delivery/high-assurance.",
+    )
     parser.add_argument("--changed-file", action="append", default=[], help="Known file scope for risk detection.")
     args = parser.parse_args()
 
@@ -42,6 +50,7 @@ def main() -> int:
     else:
         risk = {"level": args.risk, "source": "manual", "reasons": ["provided by caller"]}
 
+    operating_mode = resolve_operating_mode(risk["level"], args.mode)
     state = make_initial_state(
         root=root,
         run_id=run_id,
@@ -51,17 +60,23 @@ def main() -> int:
         success_criteria=args.success,
         non_goal=args.non_goal,
         expected_output=args.expected_output,
+        operating_mode=operating_mode,
     )
     path = save_state(root, state)
     contract_path = write_delivery_contract(root, state)
     append_event(root, run_id, "start", {"title": title, "goal": goal, "risk": risk})
     print(f"run_id: {run_id}")
     print(f"risk: {risk['level']}")
+    print(f"mode: {operating_mode}")
+    print(f"required_evidence_level: {required_evidence_level(operating_mode)}")
     for reason in risk.get("reasons", []):
         print(f"- {reason}")
     print(f"state: {path}")
     print(f"contract: {contract_path}")
-    print("next: fill the delivery contract, then run contract.py validate and contract.py approve")
+    if operating_mode == "explore":
+        print("next: explore locally; use delivery mode before production release")
+    else:
+        print("next: fill the delivery contract, then run contract.py validate and contract.py approve")
     return 0
 
 

@@ -10,6 +10,7 @@ from pathlib import Path
 from harness_common import (
     append_event,
     append_unique,
+    evidence_label,
     feedback_dir,
     latest_run_id,
     load_state,
@@ -36,6 +37,22 @@ def case_log_needed(state: dict, mode: str) -> bool:
         return True
     results = state.get("verification", {}).get("results", [])
     return any(isinstance(item, dict) and item.get("passed") is False for item in results)
+
+
+def evidence_gate(state: dict) -> str | None:
+    if state.get("compatibility", {}).get("legacy_state"):
+        return None
+    verification = state.get("verification", {})
+    required = verification.get("required_evidence_level")
+    if required is None:
+        return None
+    achieved = int(verification.get("evidence_level_achieved", 0))
+    if achieved < int(required):
+        return (
+            f"required evidence level {required} ({evidence_label(int(required))}), "
+            f"achieved {achieved} ({evidence_label(achieved)})"
+        )
+    return None
 
 
 def write_case_log(root: Path, state: dict) -> Path:
@@ -96,6 +113,9 @@ Alternatives and trade-offs:
 {markdown_list(state.get("execution", {}).get("changed_files", []))}
 
 ## Verification
+Required evidence level: {state.get("verification", {}).get("required_evidence_level", "legacy or not initialized")}
+Achieved evidence level: {state.get("verification", {}).get("evidence_level_achieved", "legacy or not initialized")}
+
 Commands:
 {markdown_list(state.get("verification", {}).get("commands", []))}
 
@@ -169,9 +189,18 @@ def main() -> int:
     state = load_state(root, run_id)
     contract = state.get("delivery_contract")
     if args.status == "completed" and contract and contract.get("status") != "approved":
-        print("cannot complete: delivery contract is not approved")
-        print("run contract.py check and contract.py approve after the owner reviews it")
-        return 1
+        if contract.get("status") == "compact-approved":
+            pass
+        else:
+            print("cannot complete: delivery contract is not approved")
+            print("run contract.py check and contract.py approve after the owner reviews it")
+            return 1
+    if args.status == "completed":
+        evidence_error = evidence_gate(state)
+        if evidence_error:
+            print(f"cannot complete: {evidence_error}")
+            print("run run_checks.py or record_evidence.py with the required evidence source")
+            return 1
     state["status"] = args.status
 
     if args.summary:

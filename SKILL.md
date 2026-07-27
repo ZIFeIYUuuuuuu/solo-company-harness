@@ -129,8 +129,20 @@ Use the bundled scripts to make each run observable and repeatable.
 Start a run:
 
 ```bash
-python <skill-dir>/scripts/start_run.py <project-root> --title "add onboarding" --goal "Add first-run onboarding"
+python <skill-dir>/scripts/start_run.py <project-root> --title "add onboarding" --goal "Add first-run onboarding" --mode auto
 ```
+
+Operating modes are progressive:
+
+- `explore`: local prototypes and one-off experiments. The harness creates a compact
+  exploratory contract and does not treat the result as production-ready.
+- `delivery`: normal user-facing work. A full delivery contract must be approved
+  before production edits.
+- `high-assurance`: auth, payments, migrations, production data, deployment, and
+  public release. It requires stronger evidence and recovery boundaries.
+
+Auto mode maps low/medium/high risk to explore/delivery/high-assurance. A lower mode
+cannot be used to bypass a higher-risk requirement.
 
 This creates:
 
@@ -172,6 +184,29 @@ Run verification commands:
 ```bash
 python <skill-dir>/scripts/run_checks.py <project-root> --auto
 ```
+
+Verification evidence has five levels:
+
+```text
+L0 static      static inspection
+L1 local       local tests, build, lint, typecheck, or smoke
+L2 integration integration tests or simulated external services
+L3 real-path   real third-party service and real user path
+L4 dogfood     owner or seed user uses the feature in a realistic environment
+```
+
+Record evidence that cannot be inferred from a local command:
+
+```bash
+python <skill-dir>/scripts/record_evidence.py <project-root> \
+  --level 3 --source real-path \
+  --summary "Real upload reached the provider and persisted the visible result" \
+  --artifact "docs/case-log/real-upload.md"
+```
+
+`run_checks.py` records successful local commands as L1. It does not prove an
+external service or user path. Do not record a higher level without the corresponding
+real receipt.
 
 Finish a run and create durable feedback:
 
@@ -227,8 +262,8 @@ Use `high` when the task affects payments, auth, security, production data, migr
 Risk controls:
 
 - Low: use compact run card, optional decision gates, focused verification, concise final report.
-- Medium: write a clear contract before edits, run a brief first-principles gate, run a brief adversarial review, run relevant checks, report risks.
-- High: require first-principles and adversarial gates, include rollback plan, stronger verification, release mode, and explicit residual risk.
+- Medium: use delivery mode, write a clear contract before edits, run brief first-principles and adversarial gates, run relevant checks, report risks.
+- High: use high-assurance mode, require first-principles and adversarial gates, include rollback plan, at least L2 evidence, release mode, and explicit residual risk.
 
 ## Decision Gates
 
@@ -442,6 +477,11 @@ Choose checks based on risk:
 - Low: run the most relevant focused test, lint, typecheck, build, or manual check.
 - Medium: run focused tests plus typecheck, lint, or build when available. Manually verify changed UI or workflow behavior.
 - High: run the full relevant test suite where feasible. Verify rollback or recovery story. Check security, data, auth, migration, and production-impact assumptions.
+
+Do not confuse evidence levels with confidence language. A local test can prove a
+local invariant, but it cannot prove a real callback, external provider, production
+configuration, or user-visible result. Record the missing level as residual risk when
+the higher-level path is unavailable.
 
 If verification fails, fix and rerun.
 
