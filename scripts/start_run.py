@@ -14,6 +14,7 @@ from harness_common import (
     project_root,
     save_state,
     slugify,
+    write_delivery_contract,
 )
 
 
@@ -52,12 +53,15 @@ def main() -> int:
         expected_output=args.expected_output,
     )
     path = save_state(root, state)
+    contract_path = write_delivery_contract(root, state)
     append_event(root, run_id, "start", {"title": title, "goal": goal, "risk": risk})
     print(f"run_id: {run_id}")
     print(f"risk: {risk['level']}")
     for reason in risk.get("reasons", []):
         print(f"- {reason}")
     print(f"state: {path}")
+    print(f"contract: {contract_path}")
+    print("next: fill the delivery contract, then run contract.py validate and contract.py approve")
     return 0
 
 

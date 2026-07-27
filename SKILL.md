@@ -1,6 +1,6 @@
 ---
 name: solo-company-harness
-description: Use when the user is building, modifying, debugging, reviewing, or shipping software as a one-person company with AI coding. This skill runs a lightweight solo-company workflow and AI Coding Harness for project work, feature delivery, bug fixing, refactoring, product iteration, first-principles checks, adversarial review, validation, release, feedback, case logs, playbooks, and reusable learning.
+description: Use when the user is building, modifying, debugging, reviewing, or shipping software as a one-person company with AI coding. This skill runs a risk-aware AI Coding Harness with project memory, delivery contracts, anti-gaming acceptance criteria, first-principles checks, adversarial review, verification evidence, release control, case logs, playbooks, and reusable learning.
 ---
 
 # Solo Company Harness
@@ -41,53 +41,39 @@ Act as Orchestrator. Choose only the roles needed for the current task. Do not c
 
 ## Operating Modes
 
-Resolve the target module's mode before State 0 Intent. Use
-`scripts/resolve_mode.py <project-root> --module <module>` when a module name is
-available. The resolver is read-only and must not be bypassed by a requested mode.
+When a module name is available, resolve its implementation mode before Intent:
+
+```bash
+python <skill-dir>/scripts/resolve_mode.py <project-root> --module <module>
+```
 
 ### Design-Locked
 
-Use this mode only when all of the following are true:
-
-- a module design document is present with `Status: approved`;
-- a user story is present with `Status: approved`;
-- the documents contain scope, non-goals, and testable acceptance criteria;
-- medium/high-risk work names verification and rollback or recovery boundaries.
-
-In Design-Locked mode, read the approved documents and relevant SSOT, summarize the
-contract, and implement without reopening settled product decisions. Ask the owner only
-when new evidence contradicts the approved contract or crosses its documented boundary.
+Use this mode only when an approved module design and an approved user story both
+exist, include scope, non-goals, and testable acceptance criteria, and medium/high-risk
+work names verification and rollback boundaries. Read the approved contract and
+implement without reopening settled product decisions.
 
 ### Discovery-Gated
 
-Use this mode when a design document or user story is missing, marked `draft` or
-`superseded`, stale, or incomplete.
+Use this mode when the design or user story is missing, draft, superseded, stale, or
+incomplete. Repository inspection, targeted questions, and draft documents are
+allowed, but production code, schema, migration, public API, and release configuration
+changes are blocked until the owner approves the module documents.
 
-Discovery-Gated permits repository inspection, targeted questions, and draft design
-artifacts. It forbids production code, schema, migration, public API, and release
-configuration changes until the owner explicitly approves the module documents.
+Ask one consolidated set of questions covering actor, trigger, outcome, happy path,
+failure states, inputs, outputs, permissions, non-goals, acceptance examples, rollout,
+and recovery. Do not invent answers to make a draft look complete.
 
-Ask one consolidated set of unresolved questions covering actor/trigger, desired
-outcome, happy path, alternate and failure states, inputs/outputs, permissions,
-non-goals, acceptance examples, rollout, and recovery. Do not invent answers that make
-the draft look complete. After approval, set both documents to `Status: approved` and
-re-run the resolver to enter Design-Locked mode.
-
-Recommended module document locations:
+Recommended locations:
 
 ```text
 docs/design/modules/<module>.md
 docs/user-stories/<module>.md
 ```
 
-Each document should include `Status: draft | approved | superseded`, `Owner`, and
-`Updated`. The low-risk compact run card remains available for local, reversible,
-non-user-facing fixes; any API, schema, external integration, security, deployment, or
-core workflow change remains Discovery-Gated without an approved contract.
-
-The harness should report the resolved mode and reason at the start of a run, for
-example `DESIGN-LOCKED: assembly-planner contract v1` or
-`DISCOVERY-GATED: missing approved user story`.
+The resolver is read-only and cannot be bypassed by requesting a preferred mode. The
+delivery contract remains the final execution gate after the module mode is known.
 
 ## SSOT Bootstrap
 
@@ -261,28 +247,22 @@ Keep both gates compact:
 ## User Constraint Gate
 
 Before executing a request, compare it with the approved user story, design contract,
-security boundaries, data-integrity rules, and release gates. Do not let a user or
-agent repeat a known violation without an explicit warning and correction path.
+security boundaries, data-integrity rules, and release gates.
 
 Classify conflicts as:
 
-- **Hard constraint**: security, privacy, secret handling, immutable source data,
-  provenance, legal/compliance, or truthful verification. Block the request, explain
-  the reason, and provide a compliant alternative. User insistence does not override
-  these constraints.
-- **Negotiable constraint**: MVP scope, TTL policy, provider choice, quality/cost
-  tradeoffs, or other approved-contract changes. Warn first, state the impact, and
-  apply a reversible correction only when it remains within the approved contract.
-  If the contract itself must change, obtain explicit owner approval and record the
-  exception.
-- **Advisory constraint**: a recommendation that does not threaten correctness or
-  safety. Inform the user and continue.
+- **Hard constraint**: security, privacy, secrets, immutable source data, provenance,
+  legal/compliance, or truthful verification. Block the request and provide a compliant
+  alternative. User insistence does not override it.
+- **Negotiable constraint**: MVP scope, TTL, provider choice, quality/cost trade-offs,
+  or other approved-contract changes. Warn first, state the impact, and require owner
+  approval if the contract itself changes.
+- **Advisory constraint**: a recommendation that affects efficiency or quality but not
+  correctness or safety. Inform the user and continue.
 
-Never change an approved contract silently. For a clear, reversible correction within
-the existing contract, tell the user what will be corrected and proceed unless they
-object. Record violations, warnings, corrections, and explicit exceptions in the run
-or case log so the next task does not repeat the same mistake. Do not promote a
-project-specific exception into a cross-project rule without user approval.
+Never change an approved contract silently. Record violations, warnings, corrections,
+and explicit exceptions in the run or case log. Do not promote a project-specific
+exception into a cross-project rule without user approval.
 
 ## State 0: Intent
 
@@ -359,6 +339,56 @@ docs/case-log/
 ## State 2: Contract
 
 Before meaningful edits, state the execution contract.
+
+Every new run also has a delivery contract at
+`.harness/runs/<run-id>/delivery-contract.md`. Treat it as the owner's definition
+of real completion, not as optional planning prose. Before State 3, complete and
+approve it with:
+
+```bash
+python <skill-dir>/scripts/contract.py update <project-root> --run-id <run-id> \
+  --why "The user needs a reliable saved result" \
+  --approach "Reuse the existing provider boundary" \
+  --acceptance "User sees a real result || real input, provider response, persistence, and UI evidence || mock output, hardcoded response, or manual database edit" \
+  --boundaries "Keep the existing auth boundary; no unrelated redesign" \
+  --anti-cheat "Do not bypass the provider or count fixtures as production data" \
+  --infeasible "Cannot support offline processing until the provider contract exists" \
+  --alternative "Use a queued job later; rejected for this MVP because it adds operational scope" \
+  --divergence "Compared direct request, queue, and batch replay; selected direct request for the MVP" \
+  --verification "Run the real user path with a non-fixture input and inspect persisted evidence" \
+  --rollback "Revert the change and preserve the previous successful result"
+python <skill-dir>/scripts/contract.py validate <project-root> --run-id <run-id>
+python <skill-dir>/scripts/contract.py approve <project-root> --run-id <run-id> --approved-by "owner"
+```
+
+The `--acceptance` value must use this format:
+`criterion || evidence || prohibited shortcut`. Every criterion needs observable
+evidence and an explicit statement of what does not count as success.
+
+The contract must answer, at the same granularity as a company delivery brief:
+
+- Why the work exists and which user or business outcome matters.
+- The chosen implementation approach and what is deliberately out of scope.
+- Testable acceptance criteria, each mapped to evidence and a counterexample.
+- Boundaries, non-goals, security or data constraints, and rollback or recovery.
+- Anti-gaming rules: the shortest paths that satisfy a metric without delivering the
+  real outcome. Examples include hardcoded output, fixture-only success, mocked
+  provider evidence, disabled auth, manual database edits, hidden errors, or a page
+  that opens without the real user path working.
+- Infeasible paths, unresolved dependencies, divergent options considered, and the
+  trade-off behind the selected approach.
+
+Ask: “If an agent optimized only for the metric, how could it fake completion?”
+Turn each answer into a prohibited shortcut and a verification check. Do not claim
+completion from a proxy when the contract requires a real path.
+
+The contract is a gate. A new run starts as `contract_pending`; production code,
+schema, migration, public API, release configuration, and user-facing workflow
+changes must wait for owner approval. `contract.py check` must pass before Execute.
+If an approved contract changes, the tool automatically returns it to `draft` and
+blocks completion until it is approved again. If the goal cannot be met, mark the
+run `blocked` and report the failed approaches, closest alternatives, trade-offs,
+and the decision needed from the owner. Never silently relax the contract.
 
 For medium/high-risk work, run the first-principles gate before writing the contract:
 

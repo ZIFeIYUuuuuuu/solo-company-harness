@@ -65,6 +65,19 @@ Start a run:
 python <skill-dir>/scripts/start_run.py <project-root> --title "<title>" --goal "<goal>"
 ```
 
+Before production edits, complete and approve the delivery contract created for the run:
+
+```bash
+python <skill-dir>/scripts/contract.py update <project-root> --why "<why>" --approach "<how>"
+python <skill-dir>/scripts/contract.py validate <project-root>
+python <skill-dir>/scripts/contract.py approve <project-root> --approved-by "<owner>"
+```
+
+The contract must include observable acceptance evidence, boundaries, prohibited
+shortcuts, infeasible paths, alternatives, divergent options, verification, and
+rollback or recovery. Do not treat fixtures, mocks, hardcoded output, manual data
+edits, or a passing build as proof when the real user path is required.
+
 Update a run:
 
 ```bash
@@ -96,7 +109,9 @@ python <skill-dir>/scripts/init_agents.py <project-root> --skill-path <skill-dir
 - `medium`: user-facing behavior, shared code, APIs, data shape, integrations, project structure, or deployment config.
 - `high`: auth, payments, security, production data, migrations, irreversible operations, broad architecture, or public release.
 
-For medium/high risk, require a clear contract, verification plan, rollback or recovery story, and residual-risk report.
+For every run, require an approved delivery contract before production edits. For
+medium/high risk, require a clear verification plan, rollback or recovery story, and
+residual-risk report. If the contract changes, re-approval is required.
 {END}
 """
 

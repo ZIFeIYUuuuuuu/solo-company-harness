@@ -1,223 +1,127 @@
+<div align="center">
+
 # Solo Company Harness
 
-面向独立开发者、一人公司和 AI Coding 工作流的项目交付 Skill。
+### 面向独立开发者的一人公司 AI Coding 交付 Skill
 
-[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-2563EB?style=flat-square)](https://agentskills.io)
-[![Codex](https://img.shields.io/badge/Codex-Skill-10B981?style=flat-square)](https://github.com/openai/codex)
-[![License](https://img.shields.io/badge/License-TBD-F59E0B?style=flat-square)](#许可证)
+[![License](https://img.shields.io/badge/License-MIT-2563EB?style=for-the-badge)](./LICENSE)
+[![Agent Skills](https://img.shields.io/badge/Agent%20Skills-compatible-7C3AED?style=for-the-badge)](https://agentskills.io)
+[![Codex](https://img.shields.io/badge/Codex-Skill-059669?style=for-the-badge)](https://github.com/openai/codex)
 
-这个仓库把一人公司使用 AI 编写软件时反复遇到的工作方法，整理成一个可以被 Agent 直接加载的结构化 Skill。
+**让 AI 不只会写代码，还能按目标、合同、证据和复盘把项目交付出来。**
 
-It turns every AI coding task into a lightweight operating loop:
+[快速开始](#快速开始) · [它解决什么](#它解决什么) · [工作流](#工作流) · [许可证](#许可证)
+
+</div>
+
+## 它解决什么
+
+AI Coding 已经可以在几分钟内生成页面、接口和测试，但一个真正能交付的产品还需要回答：
+
+- 为什么做这个功能？
+- 谁会使用它？
+- 什么算完成？
+- 哪些实现方式虽然能让指标通过，但不算交付？
+- 用什么证据证明真实路径可用？
+- 这次的经验如何避免下次重复踩坑？
+
+Solo Company Harness 把这些问题变成 Agent 可以持续执行的项目工作流，适合独立开发者、solo founder、一人公司和使用 AI Coding 的小团队。
+
+它不是代码生成模板，也不是一份越来越长的 Prompt。它更像一套轻量的项目交付操作系统：保留项目记忆，约束任务边界，记录决策和证据，并把重复经验沉淀成可复用规则。
+
+## 核心工作流
 
 ```text
 Intent -> Context -> Contract -> Execute -> Verify -> Release -> Observe -> Distill
 ```
 
-目标很简单：更快交付，同时不丢失正确性、项目记忆、验证证据和可复用经验。
+| 阶段 | 解决的问题 | 典型产物 |
+| --- | --- | --- |
+| Intent | 为什么做，成功是什么 | 目标、用户价值、非目标、风险等级 |
+| Context | 做之前必须知道什么 | 项目 SSOT、代码上下文、约束、历史决策 |
+| Contract | 准备怎么做，什么不算完成 | 交付合同、验收标准、反作弊规则、回滚方案 |
+| Execute | 如何保持小步、可逆和可审查 | 变更文件、执行决策 |
+| Verify | 如何证明真实可用 | 测试命令、真实路径、验证结果 |
+| Release | 如何控制发布风险 | local-only、dogfood、beta 或 full |
+| Observe | 这次实际发生了什么 | 意外、残余风险、证据、后续事项 |
+| Distill | 哪些经验值得保留 | case log、playbook、Skill 改进提案 |
 
-Before implementation, the harness resolves one of two modes:
+## 两种实现模式
 
-- **Design-Locked**: an approved module design and user story with testable acceptance criteria exist, so implementation proceeds without reopening settled decisions.
-- **Discovery-Gated**: the module contract is missing, draft, stale, or incomplete; the harness asks targeted questions and allows draft documentation, but blocks production code until the owner approves the contract.
+当任务对应一个明确模块时，Harness 可以先判断模块是否具备批准的设计合同：
 
-它不是一个代码生成模板，也不是一套强制性的企业流程。它提供的是一组轻量门禁，让 Agent 在真正改代码前先确认合同，在交付前证明真实路径。
-
-## What It Does
-
-- Initializes a project SSOT (single source of truth) for company, product, customer, and system knowledge.
-- Creates or refreshes a project-level `AGENTS.md` contract.
-- Starts structured AI coding runs with `.harness/runs/<run-id>/state.json`.
-- Detects task risk levels from task text and file scope.
-- Detects likely test/build commands from project files.
-- Runs verification commands and records results.
-- Generates case logs for meaningful work.
-- Promotes repeated lessons into playbooks.
-- Queues skill improvements for review.
-- Promotes user-approved cross-project lessons into skill-level approved experience.
-
-## Install
-
-Clone this repository into your Codex skills directory:
+- **Design-Locked**：模块设计和用户故事都已批准，范围、非目标和验收标准完整，Agent 可以按合同实现。
+- **Discovery-Gated**：设计缺失、仍是草稿、已过期或验收不完整，Agent 可以调研和补文档，但不能直接修改生产代码、数据库结构、公开 API 或发布配置。
 
 ```bash
-git clone https://github.com/ZIFeIYUuuuuuu/solo-company-harness.git ~/.codex/skills/solo-company-harness
+python ~/.codex/skills/solo-company-harness/scripts/resolve_mode.py . \
+  --module upload
 ```
 
-On Windows PowerShell:
+这一步只负责判断模块准备度，真正开始编码仍然需要通过本次 run 的交付合同。
 
-```powershell
-Copy-Item -Recurse .\solo-company-harness C:\Users\Administrator\.codex\skills\
-```
+## 主要能力
 
-Then invoke it in Codex:
+### 项目记忆
 
-```text
-Use $solo-company-harness for this project.
-```
-
-## Project Bootstrap
-
-From a project root, initialize project memory:
-
-```bash
-python ~/.codex/skills/solo-company-harness/scripts/init_ssot.py .
-```
-
-This creates:
+初始化项目级 SSOT，集中保存公司、产品、客户和系统信息：
 
 ```text
 docs/company.md
 docs/product.md
 docs/customers.md
 docs/system.md
-docs/playbooks/README.md
-docs/case-log/README.md
+docs/playbooks/
+docs/case-log/
 ```
 
-Create or refresh the project `AGENTS.md`:
+### 风险感知
 
-```bash
-python ~/.codex/skills/solo-company-harness/scripts/init_agents.py . --skill-path ~/.codex/skills/solo-company-harness
-```
+根据任务描述和文件范围识别 low、medium、high 风险。登录、支付、生产数据、迁移、部署和安全边界会自动进入更严格的验证路径。
 
-## Typical Workflow
+### 交付合同
 
-Start a run:
+在正式修改生产代码之前，要求任务明确写出：
 
-```bash
-python ~/.codex/skills/solo-company-harness/scripts/start_run.py . --title "add login" --goal "Add user login"
-```
+- 为什么做，以及真实用户或业务结果；
+- 选择的实现方案和明确边界；
+- 可观察的验收标准和对应证据；
+- 不可行路径、替代方案和发散思路；
+- 回滚或恢复方式。
 
-Record decisions or changed files:
+### Anti-gaming 反作弊验收
 
-```bash
-python ~/.codex/skills/solo-company-harness/scripts/update_run.py . --changed-file src/auth/login.ts --decision "Reuse existing auth boundary"
-```
+每条验收标准都要说明什么不算通过，防止 Agent 只完成指标、不完成真实目标。
 
-Detect tests:
+例如，真实上传链路不能用下面这些方式冒充完成：
 
-```bash
-python ~/.codex/skills/solo-company-harness/scripts/detect_tests.py . --write-run
-```
+- 手动修改数据库制造成功状态；
+- 用 fixture 冒充真实用户数据；
+- 用 mock Provider 结果冒充真实外部服务；
+- 关闭鉴权让流程暂时跑通；
+- 只验证页面能打开，不验证真实用户路径；
+- 隐藏错误，只展示成功提示。
 
-Run checks:
+### 验证与证据
 
-```bash
-python ~/.codex/skills/solo-company-harness/scripts/run_checks.py . --auto
-```
+自动识别项目中的测试、类型检查、Lint 和构建命令，运行后把结果写入 run 记录。涉及外部服务、上传、回调、认证或同步时，优先验证一条真实端到端路径，而不是只看局部测试或构建是否成功。
 
-Resolve a module mode:
-
-```bash
-python ~/.codex/skills/solo-company-harness/scripts/resolve_mode.py . --module assembly-planner
-```
-
-Finish a run:
-
-```bash
-python ~/.codex/skills/solo-company-harness/scripts/finish_run.py . --lesson "Auth changes need focused regression tests"
-```
-
-Promote a repeated lesson into a playbook:
-
-```bash
-python ~/.codex/skills/solo-company-harness/scripts/update_playbook.py . --topic "auth regression checks"
-```
-
-Promote approved cross-project experience into the skill:
-
-```bash
-python ~/.codex/skills/solo-company-harness/scripts/promote_experience.py . --skill-root ~/.codex/skills/solo-company-harness --approved-by "you" --lesson "Medium-risk auth changes require regression checks"
-```
-
-## Repository Layout
+### 经验沉淀
 
 ```text
-SKILL.md
-agents/openai.yaml
-references/approved-experience.md
-scripts/
-  init_ssot.py
-  init_agents.py
-  start_run.py
-  update_run.py
-  detect_risk.py
-  detect_tests.py
-  run_checks.py
-  finish_run.py
-  update_playbook.py
-  propose_skill_update.py
-  promote_experience.py
-  resolve_mode.py
+单次事件 -> case log
+重复问题 -> project playbook
+跨项目且经用户批准的经验 -> approved experience
+稳定的工作方法 -> Skill 或自动化
 ```
 
-## Design Principles
+Skill 不会因为一次任务的反馈而被静默修改，所有跨项目规则都要经过审核。
 
-- Keep project facts in the project SSOT.
-- Keep run evidence in `.harness/runs/`.
-- Keep one-off lessons in case logs.
-- Promote repeated lessons into project playbooks.
-- Promote only user-approved cross-project lessons into skill-level approved experience.
-- Do not silently mutate the skill from one run.
+## 快速开始
 
-## 中文
+### 安装到 Codex
 
-Solo Company Harness 是一个面向独立开发者、一人公司和 solo founder 的 Codex Skill。它帮助你在使用 AI Coding 做项目时，同时保证效率、准确性、验证证据和经验沉淀。
-
-它把每次 AI Coding 任务变成一个轻量状态循环：
-
-```text
-Intent -> Context -> Contract -> Execute -> Verify -> Release -> Observe -> Distill
-```
-
-目标很简单：让你更快交付，同时不丢失项目知识、验证结果、决策记录和可复用经验。
-
-开始编码前，Harness 会先判断模块是否已经具备批准的设计文档和用户故事：
-
-- **Design-Locked**：设计和用户故事已批准，直接按合同实现。
-- **Discovery-Gated**：设计缺失、仍为草稿或验收标准不完整，只能先追问和补齐文档，不能修改生产代码。
-
-## 它能做什么
-
-- 初始化项目 SSOT（单一事实源），保存公司、产品、客户和系统知识。
-- 创建或刷新项目级 `AGENTS.md` 契约。
-- 为每次 AI Coding 创建 `.harness/runs/<run-id>/state.json` 状态记录。
-- 根据任务描述和文件范围自动判断风险等级。
-- 根据项目文件自动识别测试、构建、类型检查命令。
-- 自动运行验证命令并记录结果。
-- 为重要任务生成 case log。
-- 把重复经验沉淀成 playbook。
-- 把 Skill 改进建议放入审核队列。
-- 经用户审核后，把跨项目经验写入 Skill 的 approved experience。
-
-## 用户约束门
-
-这个 Skill 不只约束 Agent，也会在用户请求违反项目合同的时候主动提醒用户，避免错误反复发生。
-
-- **硬约束**：安全、隐私、密钥、数据不可变性、来源追溯、法律合规和真实验收。违反时阻止执行，说明风险并给出替代方案；用户坚持也不能绕过。
-- **可协商约束**：MVP 范围、TTL、模型选择、成本和质量取舍。先说明影响，再采用可逆修正；如果需要改变批准合同，要求用户明确批准并记录例外。
-- **建议约束**：只影响效率或工程质量。主动提醒，但不无故阻塞任务。
-
-任何自动修正都必须先告知用户。已批准的合同不能被静默改变，项目例外也不能自动升级成跨项目规则。
-
-## 真实链路门禁
-
-涉及 AI Provider、上传、回调、认证、同步或公网资源时，必须优先验证一条真实端到端路径：
-
-```text
-真实输入 -> 本地应用 -> 外部服务 -> 真实结果 -> 本地持久化 -> 用户可见结果
-```
-
-局部测试、模拟 Provider、构建成功或浏览器页面能打开，都不能单独证明产品路径可用。
-
-跨服务配置也是系统代码的一部分，必须在 `.env`、Docker、启动脚本、反向代理、远端存储、文档和测试命令之间保持一致。一个生产能力只保留一个 canonical path，避免重复网关、重复存储和重复 secret。
-
-先完成一个可证明的 MVP 闭环，再增加多窗口、replay、审计、策略和质量优化。传输可用性必须先于模型语义质量。
-
-## 安装
-
-把仓库克隆到 Codex skills 目录：
+在项目根目录执行：
 
 ```bash
 git clone https://github.com/ZIFeIYUuuuuuu/solo-company-harness.git ~/.codex/skills/solo-company-harness
@@ -226,112 +130,170 @@ git clone https://github.com/ZIFeIYUuuuuuu/solo-company-harness.git ~/.codex/ski
 Windows PowerShell：
 
 ```powershell
-Copy-Item -Recurse .\solo-company-harness C:\Users\Administrator\.codex\skills\
+$dest = Join-Path $env:USERPROFILE '.codex\skills\solo-company-harness'
+git clone https://github.com/ZIFeIYUuuuuuu/solo-company-harness.git $dest
 ```
 
-然后在 Codex 里调用：
+然后在 Codex 中调用：
 
 ```text
-使用 $solo-company-harness 开始这个项目。
+Use $solo-company-harness for this project.
 ```
 
-## 初始化项目
+### 初始化项目
 
-在项目根目录初始化 SSOT：
+在项目根目录运行：
 
 ```bash
 python ~/.codex/skills/solo-company-harness/scripts/init_ssot.py .
+python ~/.codex/skills/solo-company-harness/scripts/init_agents.py . \
+  --skill-path ~/.codex/skills/solo-company-harness
 ```
 
-它会创建：
+### 开始一次任务
+
+```bash
+python ~/.codex/skills/solo-company-harness/scripts/start_run.py . \
+  --title 'add upload' \
+  --goal '完成真实文件上传'
+```
+
+`start_run.py` 会创建：
 
 ```text
-docs/company.md
-docs/product.md
-docs/customers.md
-docs/system.md
-docs/playbooks/README.md
-docs/case-log/README.md
+.harness/runs/<run-id>/state.json
+.harness/runs/<run-id>/events.jsonl
+.harness/runs/<run-id>/delivery-contract.md
 ```
 
-创建或刷新项目 `AGENTS.md`：
+### 填写并批准交付合同
+
+正式写生产代码之前，先补齐合同：
 
 ```bash
-python ~/.codex/skills/solo-company-harness/scripts/init_agents.py . --skill-path ~/.codex/skills/solo-company-harness
+python ~/.codex/skills/solo-company-harness/scripts/contract.py update . \
+  --why '用户需要一条可靠的真实上传路径' \
+  --approach '复用现有上传边界，不新增网关' \
+  --acceptance '用户看到真实处理结果 || 真实文件、真实服务响应、持久化记录和页面结果 || mock、fixture、写死返回值或手工改库' \
+  --boundaries '不重做无关页面，不改变现有鉴权边界' \
+  --anti-cheat '不能用局部测试或假数据替代真实用户路径' \
+  --infeasible '当前没有离线 Provider，因此不承诺离线处理' \
+  --alternative '先做同步 MVP，队列方案留到后续，因为当前没有运维需求' \
+  --divergence '比较同步、队列和批处理方案后，选择同步 MVP' \
+  --verification '使用非 fixture 文件走一条真实端到端路径并核对持久化证据' \
+  --rollback '回退到最后一个可用版本并保留之前的成功结果'
+
+python ~/.codex/skills/solo-company-harness/scripts/contract.py validate .
+python ~/.codex/skills/solo-company-harness/scripts/contract.py approve . --approved-by 'owner'
 ```
 
-## 常见工作流
+`--acceptance` 使用以下格式：
 
-开始一次任务：
-
-```bash
-python ~/.codex/skills/solo-company-harness/scripts/start_run.py . --title "add login" --goal "Add user login"
+```text
+验收标准 || 需要提供的证据 || 哪些路径不算通过
 ```
 
-记录决策或变更文件：
+批准后的合同如果被修改，会自动退回 `draft`，需要重新审核。无法完成时，应将 run 标记为 `blocked`，说明阻塞原因和替代方案，不要把伪实现包装成完成。
+
+### 执行、验证和收尾
 
 ```bash
-python ~/.codex/skills/solo-company-harness/scripts/update_run.py . --changed-file src/auth/login.ts --decision "Reuse existing auth boundary"
-```
+python ~/.codex/skills/solo-company-harness/scripts/update_run.py . \
+  --changed-file src/upload.ts \
+  --decision 'Reuse existing upload boundary'
 
-自动识别测试命令：
+python ~/.codex/skills/solo-company-harness/scripts/detect_risk.py . \
+  --task 'change upload flow' --write-run
 
-```bash
 python ~/.codex/skills/solo-company-harness/scripts/detect_tests.py . --write-run
-```
-
-运行验证：
-
-```bash
 python ~/.codex/skills/solo-company-harness/scripts/run_checks.py . --auto
+python ~/.codex/skills/solo-company-harness/scripts/finish_run.py . \
+  --lesson 'Real upload acceptance must include persistence evidence'
 ```
 
-结束任务并沉淀经验：
+## 目录结构
 
-```bash
-python ~/.codex/skills/solo-company-harness/scripts/finish_run.py . --lesson "Auth changes need focused regression tests"
-```
-
-把重复经验升级成 playbook：
-
-```bash
-python ~/.codex/skills/solo-company-harness/scripts/update_playbook.py . --topic "auth regression checks"
-```
-
-把用户审核过的跨项目经验写入 Skill：
-
-```bash
-python ~/.codex/skills/solo-company-harness/scripts/promote_experience.py . --skill-root ~/.codex/skills/solo-company-harness --approved-by "you" --lesson "Medium-risk auth changes require regression checks"
+```text
+SKILL.md                         Agent 核心工作规则
+agents/openai.yaml               Codex UI 元信息
+references/approved-experience.md 跨项目批准经验
+scripts/                         可执行的 Harness 工具
+  init_ssot.py                   初始化项目事实源
+  init_agents.py                 生成项目级 AGENTS.md
+  start_run.py                   创建一次可追踪任务
+  contract.py                    创建、验证和批准交付合同
+  resolve_mode.py                判断模块是否准备好进入实现
+  update_run.py                  记录决策、变更和观察
+  detect_risk.py                 识别任务风险
+  detect_tests.py                识别验证命令
+  run_checks.py                  执行并记录验证
+  finish_run.py                  收尾并生成 case log
+  update_playbook.py             沉淀重复经验
+  propose_skill_update.py        提出 Skill 改进
+  promote_experience.py          晋升批准的跨项目经验
 ```
 
 ## 设计原则
 
-- 项目事实保存在项目 SSOT。
-- 执行证据保存在 `.harness/runs/`。
-- 单次经验写入 case log。
-- 重复经验沉淀成项目 playbook。
-- 只有经过用户审核的跨项目经验，才写入 Skill 级 approved experience。
-- 不因为一次运行结果就静默修改 Skill 本体。
+- 项目事实放在项目 SSOT，不放在 Skill 全局规则里。
+- 每次任务都保留决策、变更和验证证据。
+- 低风险任务保持轻量，中高风险任务必须明确合同、证据和回滚边界。
+- 真实用户路径优先于局部测试、模拟 Provider 和漂亮截图。
+- 不用一次运行的偶然经验静默改变跨项目规则。
+- 用户始终是最终负责人，Agent 是可替换的临时团队。
+
+## 适用范围和限制
+
+这个 Skill 适合软件项目的规划、开发、调试、测试、发布和复盘。它不会自动替你决定产品方向，也不会保证 Agent 不犯错。它做的是把目标、边界、证据和失败状态显式化，让错误更早暴露、更容易回滚。
+
+生产环境仍然需要你自己的密钥管理、权限控制、备份、监控和发布审批。不要把 Skill 的流程记录当成安全控制本身。
+
+## 来源与致谢
+
+本项目独立实现，遵循 [Agent Skills 开放标准](https://agentskills.io)，并兼容 Codex 的 Skill 目录结构。README 的公开项目组织方式参考了 OpenAI Skills、Anthropic Skills 和其他开源 Agent Skill 项目的通用做法，但本仓库不捆绑第三方 Skill 的代码或指令文本。
+
+如果未来引入或修改第三方内容，应保留原作者、原始仓库、原许可证和修改说明，并记录在 [`THIRD_PARTY_NOTICES.md`](./THIRD_PARTY_NOTICES.md) 中。
 
 ## 贡献
 
-欢迎提交 Issue、Pull Request 和跨项目实践经验。
+欢迎提交 Issue、Pull Request 和可复用的交付经验。
 
 适合贡献的内容包括：
 
-- 可复用的 Harness 工作流；
+- 不依赖特定项目的 Harness 工作流；
 - 针对真实失败模式的验证脚本；
-- 不依赖特定项目的 playbook；
-- 对用户约束、风险门禁和验收流程的改进。
+- 可复用的项目 playbook；
+- 对合同、风险门禁、反作弊验收和经验沉淀的改进。
 
 提交前请确认：
 
-- 不包含 API Key、secret、个人路径或项目私有数据；
+- 不包含 API Key、Secret、个人路径或项目私有数据；
 - 修改有清晰的使用场景、边界和验证方式；
-- README、SKILL.md 和脚本行为保持一致。
+- README、SKILL.md 和脚本行为保持一致；
+- 如果修改了第三方内容，已补充来源和许可证信息。
 
 ## 许可证
 
-当前仓库暂未声明许可证。正式开源发布前，请在仓库根目录补充明确的 `LICENSE` 文件，并同步更新上方徽章。
+本项目以 [MIT License](./LICENSE) 开源。你可以自由使用、修改、复制和再分发，但请保留许可证和版权声明。
 
 由 [ZIFeIYUuuuuuu](https://github.com/ZIFeIYUuuuuuu) 维护。
+
+---
+
+## English
+
+Solo Company Harness is an Agent Skill for solo founders and small teams using AI Coding. It turns software work into an observable delivery loop with project memory, risk-aware execution, delivery contracts, anti-gaming acceptance criteria, verification evidence, release modes, and reusable learning.
+
+Quick install:
+
+```bash
+git clone https://github.com/ZIFeIYUuuuuuu/solo-company-harness.git ~/.codex/skills/solo-company-harness
+```
+
+Then invoke it in Codex with:
+
+```text
+Use $solo-company-harness for this project.
+```
+
+Read [SKILL.md](./SKILL.md) for the full operating rules. This project is released under the [MIT License](./LICENSE).

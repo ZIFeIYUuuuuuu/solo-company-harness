@@ -75,6 +75,23 @@ Edge cases:
 Rejected options:
 {markdown_list(state.get("gates", {}).get("rejected_options", []))}
 
+## Delivery Contract
+Status: {state.get("delivery_contract", {}).get("status", "legacy or not initialized")}
+Why:
+{state.get("delivery_contract", {}).get("why", "")}
+
+Acceptance criteria:
+{markdown_list(state.get("delivery_contract", {}).get("acceptance", []))}
+
+Anti-gaming rules:
+{markdown_list(state.get("delivery_contract", {}).get("anti_cheat", []))}
+
+Infeasible or blocked paths:
+{markdown_list(state.get("delivery_contract", {}).get("infeasible", []))}
+
+Alternatives and trade-offs:
+{markdown_list(state.get("delivery_contract", {}).get("alternatives", []))}
+
 ## Changes
 {markdown_list(state.get("execution", {}).get("changed_files", []))}
 
@@ -150,6 +167,11 @@ def main() -> int:
     root = project_root(args.project_root)
     run_id = args.run_id or latest_run_id(root)
     state = load_state(root, run_id)
+    contract = state.get("delivery_contract")
+    if args.status == "completed" and contract and contract.get("status") != "approved":
+        print("cannot complete: delivery contract is not approved")
+        print("run contract.py check and contract.py approve after the owner reviews it")
+        return 1
     state["status"] = args.status
 
     if args.summary:

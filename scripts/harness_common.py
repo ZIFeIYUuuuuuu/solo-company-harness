@@ -130,6 +130,10 @@ def events_path(root: Path, run_id: str) -> Path:
     return runs_dir(root) / run_id / "events.jsonl"
 
 
+def delivery_contract_path(root: Path, run_id: str) -> Path:
+    return runs_dir(root) / run_id / "delivery-contract.md"
+
+
 def verification_log_path(root: Path, run_id: str) -> Path:
     return runs_dir(root) / run_id / "verification.log"
 
@@ -320,7 +324,7 @@ def make_initial_state(
         "project_root": str(root),
         "created_at": now_iso(),
         "updated_at": now_iso(),
-        "status": "in_progress",
+        "status": "contract_pending",
         "risk": risk,
         "intent": {
             "goal": goal,
@@ -337,6 +341,21 @@ def make_initial_state(
             "edge_cases": [],
             "rejected_options": [],
         },
+        "delivery_contract": {
+            "status": "draft",
+            "approved_by": "",
+            "approved_at": "",
+            "why": "",
+            "approach": "",
+            "acceptance": [],
+            "boundaries": [],
+            "anti_cheat": [],
+            "infeasible": [],
+            "alternatives": [],
+            "divergence": [],
+            "verification": [],
+            "rollback": "",
+        },
         "contract": {
             "planned_changes": [],
             "boundaries": [],
@@ -350,6 +369,78 @@ def make_initial_state(
         "observe": {"surprises": [], "risks": [], "lessons": [], "followups": []},
         "distill": {"case_log": "", "playbooks_updated": [], "skill_update_proposed": False},
     }
+
+
+def markdown_contract(state: dict[str, Any]) -> str:
+    contract = state.get("delivery_contract", {})
+    status = contract.get("status", "draft")
+    approved_by = contract.get("approved_by") or "TBD"
+    approved_at = contract.get("approved_at") or "TBD"
+
+    acceptance = contract.get("acceptance", [])
+    if acceptance:
+        acceptance_text = []
+        for index, item in enumerate(acceptance, start=1):
+            if isinstance(item, dict):
+                acceptance_text.append(
+                    f"{index}. **标准**：{item.get('criterion', '')}\n"
+                    f"   **证据**：{item.get('evidence', '')}\n"
+                    f"   **不算通过**：{item.get('prohibited', '') or 'TBD'}"
+                )
+            else:
+                acceptance_text.append(f"{index}. {item}")
+        acceptance_text = "\n".join(acceptance_text)
+    else:
+        acceptance_text = "- TBD"
+
+    def section(items: Any) -> str:
+        return markdown_list(items if isinstance(items, list) else [])
+
+    return f"""# Delivery Contract: {state.get('title', state.get('run_id', 'run'))}
+
+Status: {status}
+Run: {state.get('run_id', '')}
+Owner approval: {approved_by}
+Approved at: {approved_at}
+
+## Why
+{contract.get('why') or 'TBD'}
+
+## Approach
+{contract.get('approach') or 'TBD'}
+
+## Acceptance Criteria
+{acceptance_text}
+
+## Boundaries and Non-goals
+{section(contract.get('boundaries'))}
+
+## Anti-gaming Rules
+Every shortcut that reaches the metric without delivering the user outcome is invalid.
+{section(contract.get('anti_cheat'))}
+
+## Infeasible or Blocked Paths
+{section(contract.get('infeasible'))}
+
+## Alternatives and Trade-offs
+{section(contract.get('alternatives'))}
+
+## Divergent Options Considered
+{section(contract.get('divergence'))}
+
+## Verification Plan
+{section(contract.get('verification'))}
+
+## Rollback or Recovery
+{contract.get('rollback') or 'TBD'}
+"""
+
+
+def write_delivery_contract(root: Path, state: dict[str, Any]) -> Path:
+    path = delivery_contract_path(root, state["run_id"])
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(markdown_contract(state), encoding="utf-8", newline="\n")
+    return path
 
 
 def markdown_list(items: list[Any]) -> str:
