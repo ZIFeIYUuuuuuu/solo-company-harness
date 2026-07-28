@@ -57,12 +57,15 @@ Intent -> Context -> Contract -> Execute -> Verify -> Release -> Observe -> Dist
 - **Design-Locked**：模块设计和用户故事都已批准，范围、非目标和验收标准完整，Agent 可以按合同实现。
 - **Discovery-Gated**：设计缺失、仍是草稿、已过期或验收不完整，Agent 可以调研和补文档，但不能直接修改生产代码、数据库结构、公开 API 或发布配置。
 
-```bash
-python <skill-dir>/scripts/resolve_mode.py . \
-  --module upload
+在 Agent 对话中直接说：
+
+```text
+请使用 solo-company-harness 检查当前项目的 upload 模块是否已经 Design-Locked。
+只做检查和报告，不要修改生产代码；如果设计缺失、过期或验收标准不完整，
+请列出需要我确认的文档和问题。
 ```
 
-这一步只负责判断模块准备度，真正开始编码仍然需要通过本次 run 的交付合同。
+Agent 会自动读取项目文档并执行对应检查。这一步只负责判断模块准备度，真正开始编码仍然需要通过本次任务的交付合同。
 
 ## 主要能力
 
@@ -95,9 +98,10 @@ docs/case-log/
 
 也可以手动指定模式，但不能用低级模式绕过高风险任务的最低要求：
 
-```bash
-python <skill-dir>/scripts/start_run.py . \
-  --title 'try parser' --goal 'Explore a parser prototype' --mode explore
+```text
+请使用 solo-company-harness，以 explore 模式在当前项目中验证一个 parser 原型。
+保持改动局部且可逆，不要把原型描述成生产就绪；完成后告诉我实际验证了什么、
+哪些问题仍未解决。
 ```
 
 ### 交付合同
@@ -139,15 +143,13 @@ L4 dogfood     自己或种子用户实际使用
 
 `delivery` 和 `high-assurance` run 会声明最低证据等级。补充真实路径或 dogfood 证据：
 
-```bash
-python <skill-dir>/scripts/record_evidence.py . \
-  --level 3 --source real-path \
-  --summary '真实文件经过 Provider 处理并在页面展示结果' \
-  --artifact 'logs/real-upload.txt' \
-  --artifact 'docs/case-log/real-upload.md'
+```text
+请使用 solo-company-harness 验证真实上传链路，不要只运行单元测试或 mock。
+请用非 fixture 文件走真实 Provider、持久化和页面展示路径，保存可追溯的验证产物，
+并在最终报告中标明实际达到的证据等级和仍然缺失的证据。
 ```
 
-脚本会记录证据收据，但不会假装替你验证外部系统。真实支付、回调、异步任务和远端数据仍然需要项目自己的验证 recipe、沙箱账号和可追溯产物。
+Agent 会记录证据收据，但不会假装替你验证外部系统。真实支付、回调、异步任务和远端数据仍然需要项目自己的验证 recipe、沙箱账号和可追溯产物。
 
 ### 经验沉淀
 
@@ -162,110 +164,77 @@ Skill 不会因为一次任务的反馈而被静默修改，所有跨项目规�
 
 ## 快速开始
 
-### 安装到 Codex、Claude Code 或 OpenCode
+### 1. 在 Agent 中安装
 
-在仓库根目录执行安装器。它会把可移植的 Skill 内容复制到宿主的默认目录：
-
-```bash
-python scripts/install_host.py --host codex
-python scripts/install_host.py --host claude-code
-python scripts/install_host.py --host opencode
-```
-
-也可以安装到项目或其他 Agent 的自定义目录：
-
-```bash
-python scripts/install_host.py --host generic \
-  --dest /path/to/agent/skills/solo-company-harness
-```
-
-宿主目录的默认值只是适配器约定，请以宿主当前文档为准。安装器默认拒绝覆盖已有目录，更新时显式加 `--update`。
-
-项目指令文件按宿主生成：
-
-```bash
-python <skill-dir>/scripts/init_agents.py . --host codex --skill-path <skill-dir>
-python <skill-dir>/scripts/init_agents.py . --host claude-code --skill-path <skill-dir>
-python <skill-dir>/scripts/init_agents.py . --host opencode --skill-path <skill-dir>
-```
-
-Codex、OpenCode 和通用宿主默认生成 `AGENTS.md`；Claude Code 默认生成 `CLAUDE.md`。
-
-### 初始化项目
-
-在项目根目录运行：
-
-```bash
-python <skill-dir>/scripts/init_ssot.py .
-python <skill-dir>/scripts/init_agents.py . \
-  --host generic --skill-path <skill-dir>
-```
-
-### 开始一次任务
-
-```bash
-python <skill-dir>/scripts/start_run.py . \
-  --title 'add upload' \
-  --goal '完成真实文件上传'
-```
-
-`start_run.py` 会创建：
+在 Codex、Claude Code、OpenCode 或其他支持 Agent Skills 的智能体中新开一个对话，直接发送：
 
 ```text
-.harness/runs/<run-id>/state.json
-.harness/runs/<run-id>/events.jsonl
+请安装并启用这个 Agent Skill：
+https://github.com/ZIFeIYUuuuuuu/solo-company-harness
+
+我当前使用的智能体是：<Codex / Claude Code / OpenCode / 其他宿主>
+请按照该宿主当前的 Skill 发现规则安装，不要把 Skill 文件复制进项目源码目录。
+安装完成后告诉我实际安装位置，并确认 SKILL.md 可以被加载；不要修改当前项目代码。
 ```
 
-`delivery` 和 `high-assurance` 模式还会生成：
+如果你的 Agent 不支持自动发现 Skill，可以把下面这句话发给它：
 
 ```text
-.harness/runs/<run-id>/delivery-contract.md
+请读取这个仓库中的 SKILL.md，把它作为当前项目的 Agent 规则加载：
+https://github.com/ZIFeIYUuuuuuu/solo-company-harness/blob/main/SKILL.md
 ```
 
-### 填写并批准交付合同
+不要让用户先查找 `~/.codex`、`~/.claude` 或其他目录。宿主负责选择目录，Agent 负责完成安装并报告结果。
 
-正式写生产代码之前，先补齐合同：
+### 2. 在当前项目中启用
 
-```bash
-python <skill-dir>/scripts/contract.py update . \
-  --why '用户需要一条可靠的真实上传路径' \
-  --approach '复用现有上传边界，不新增网关' \
-  --acceptance '用户看到真实处理结果 || 真实文件、真实服务响应、持久化记录和页面结果 || mock、fixture、写死返回值或手工改库' \
-  --boundaries '不重做无关页面，不改变现有鉴权边界' \
-  --anti-cheat '不能用局部测试或假数据替代真实用户路径' \
-  --infeasible '当前没有离线 Provider，因此不承诺离线处理' \
-  --alternative '先做同步 MVP，队列方案留到后续，因为当前没有运维需求' \
-  --divergence '比较同步、队列和批处理方案后，选择同步 MVP' \
-  --verification '使用非 fixture 文件走一条真实端到端路径并核对持久化证据' \
-  --rollback '回退到最后一个可用版本并保留之前的成功结果'
-
-python <skill-dir>/scripts/contract.py validate .
-python <skill-dir>/scripts/contract.py approve . --approved-by 'owner'
-```
-
-`--acceptance` 使用以下格式：
+进入要开发的项目后，对 Agent 说：
 
 ```text
-验收标准 || 需要提供的证据 || 哪些路径不算通过
+请使用 solo-company-harness 初始化当前项目的项目记忆和宿主规则。
+先检查已有的 CLAUDE.md、AGENTS.md、README、docs 和项目配置，保留用户内容，
+只补充缺失的 SSOT 文件和 Harness 管理区块。完成后告诉我你读取和创建了哪些文件。
 ```
 
-批准后的合同如果被修改，会自动退回 `draft`，需要重新审核。无法完成时，应将 run 标记为 `blocked`，说明阻塞原因和替代方案，不要把伪实现包装成完成。
+Claude Code 通常使用 `CLAUDE.md`；Codex、OpenCode 和通用宿主通常使用 `AGENTS.md`。如果宿主有自己的项目规则文件，Agent 应遵循宿主当前优先级。
 
-### 执行、验证和收尾
+### 3. 直接开始一次任务
 
-```bash
-python <skill-dir>/scripts/update_run.py . \
-  --changed-file src/upload.ts \
-  --decision 'Reuse existing upload boundary'
+不需要手动运行 Harness 脚本。直接描述目标，并明确要求 Agent 使用这个 Skill：
 
-python <skill-dir>/scripts/detect_risk.py . \
-  --task 'change upload flow' --write-run
+```text
+请使用 solo-company-harness 完成这个任务：为当前产品增加真实文件上传。
 
-python <skill-dir>/scripts/detect_tests.py . --write-run
-python <skill-dir>/scripts/run_checks.py . --auto
-python <skill-dir>/scripts/finish_run.py . \
-  --lesson 'Real upload acceptance must include persistence evidence'
+开始前先读取相关项目 SSOT 和现有实现，判断风险与 operating mode。
+如果是 delivery 或 high-assurance，请先给我交付合同、验收标准、反作弊规则、
+验证计划和回滚方案，等我确认后再修改生产代码。
 ```
+
+### 4. 让 Agent 管理交付过程
+
+让 Agent 自己执行脚本、记录状态和选择模式，用户只需要在关键决策点确认：
+
+```text
+请继续按 solo-company-harness 的 Intent -> Context -> Contract -> Execute ->
+Verify -> Release -> Observe -> Distill 流程推进。
+
+每次改变范围、方案或风险等级时先停下来告诉我；不要把局部测试、fixture、mock、
+写死返回值或“页面能打开”当成真实交付证据。
+```
+
+任务完成后：
+
+```text
+请使用 solo-company-harness 做收尾：运行相关测试和真实路径验证，记录实际证据等级，
+生成必要的 case log，说明发布模式、残余风险、阻塞路径和可复用经验。
+不要为了让任务显示 completed 而跳过证据门禁。
+```
+
+Agent 会在项目中维护 `.harness/runs/`、交付合同、验证日志和必要的 case log。用户不需要手动创建这些文件。
+
+### 脚本接口（维护者和自动化集成）
+
+Harness 自带的 Python 脚本是 Agent 的执行接口，不是普通用户必须学习的 CLI。需要在 CI、批处理或没有 Agent 的环境中集成时，再查看 `scripts/` 和 [PLATFORM.md](./PLATFORM.md)。
 
 ## 目录结构
 
@@ -354,13 +323,15 @@ Solo Company Harness is an Agent Skill for solo founders and small teams using A
 
 Quick install:
 
-```bash
-python scripts/install_host.py --host codex
-python scripts/install_host.py --host claude-code
-python scripts/install_host.py --host opencode
+```text
+Install and enable this Agent Skill:
+https://github.com/ZIFeIYUuuuuuu/solo-company-harness
+
+I am using <Codex / Claude Code / OpenCode / another Agent Skills host>.
+Use the host's current Skill discovery rules and confirm that SKILL.md can be loaded.
 ```
 
-Then invoke it using the host's normal skill mechanism, for example:
+Then use it in the Agent conversation:
 
 ```text
 Use the solo-company-harness skill for this project.

@@ -21,10 +21,27 @@ MCP servers, and any external integrations.
 Paths are defaults, not guarantees. Check the host's current skill discovery rules
 before publishing an adapter as supported.
 
-## Install
+## Install From An Agent
+
+The preferred installation flow is conversational. Ask the target Agent to install
+the repository and report the destination it used:
+
+```text
+Install and enable this Agent Skill:
+https://github.com/ZIFeIYUuuuuuu/solo-company-harness
+
+I am using <Codex / Claude Code / OpenCode / another Agent Skills host>.
+Use that host's current Skill discovery rules, do not put the Skill inside the
+project source tree, and confirm that SKILL.md can be loaded after installation.
+```
+
+For a project-local install, ask the Agent to use the host's project skill directory
+and preserve existing project rules. Do not ask the user to guess a global path.
+
+## Scripted Install Fallback
 
 The repository includes a local installer for the common directory shapes. Run it
-from the repository root:
+only for CI, packaging, or a host that cannot perform the conversational install:
 
 ```bash
 python scripts/install_host.py --host codex
@@ -42,9 +59,7 @@ The installer copies only the portable Skill payload, refuses to overwrite an
 existing destination, and requires `--update` for a refresh. For a project-local
 installation, pass a host-specific destination such as `.claude/skills/` or
 `.opencode/skills/`.
-
-The installer refuses to overwrite an existing destination unless `--update` is
-provided.
+Normal users should not need to run these commands themselves.
 
 ## Project Instructions
 

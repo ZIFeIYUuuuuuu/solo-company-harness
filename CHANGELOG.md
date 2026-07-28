@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Reworked the README and platform guidance around conversational installation and
+  Agent-driven usage instead of making end users run Harness scripts manually.
 - Added host-neutral installation adapters for Codex, Claude Code, OpenCode, and
   explicit generic Agent Skills destinations.
 - Added host-aware project instruction generation for `AGENTS.md` and `CLAUDE.md`,
