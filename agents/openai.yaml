@@ -1,4 +1,4 @@
 interface:
   display_name: "Solo Company Harness"
   short_description: "One-person company AI coding workflow"
-  default_prompt: "Use $solo-company-harness to plan, implement, verify, and distill this AI coding task."
+  default_prompt: "Use $solo-company-harness to define the delivery contract, implement, verify the real path, and distill this AI coding task."

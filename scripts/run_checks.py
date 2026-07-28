@@ -15,6 +15,7 @@ from harness_common import (
     load_state,
     project_root,
     save_state,
+    update_evidence_level,
     verification_log_path,
 )
 
@@ -33,6 +34,7 @@ def run_command(root: Path, command: str, timeout: int) -> dict[str, object]:
         "command": command,
         "exit_code": completed.returncode,
         "passed": completed.returncode == 0,
+        "evidence_level": 1,
         "output": output[-8000:],
     }
 
@@ -72,10 +74,13 @@ def main() -> int:
                     "command": command,
                     "exit_code": -1,
                     "passed": False,
+                    "evidence_level": 1,
                     "output": f"Timed out after {args.timeout}s\n{exc.stdout or ''}\n{exc.stderr or ''}",
                 }
             log.write(str(result["output"]) + "\n")
             append_unique(state, "verification.results", result)
+            if result["passed"]:
+                update_evidence_level(state, int(result.get("evidence_level", 1)))
             if not result["passed"]:
                 failures += 1
                 print(f"failed: {command}")

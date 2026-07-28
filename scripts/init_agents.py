@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Create or refresh a project AGENTS.md harness block."""
+"""Create or refresh host-specific project instructions for the harness."""
 
 from __future__ import annotations
 
 import argparse
 from pathlib import Path
 
+from host_adapters import invocation_for_host, instruction_file_for_host, normalize_host
 from harness_common import now_iso, project_root
 
 
@@ -13,7 +14,8 @@ START = "<!-- SOLO-COMPANY-HARNESS:START -->"
 END = "<!-- SOLO-COMPANY-HARNESS:END -->"
 
 
-def managed_block(root: Path, skill_path: str) -> str:
+def managed_block(root: Path, skill_path: str, host: str = "generic") -> str:
+    host = normalize_host(host)
     skill_line = skill_path or "TBD"
     return f"""{START}
 # Solo Company Harness
@@ -21,6 +23,11 @@ def managed_block(root: Path, skill_path: str) -> str:
 This project uses the solo-company-harness workflow for AI coding.
 
 Generated/updated: {now_iso()}
+Host: {host}
+
+## Invocation
+
+{invocation_for_host(host)}
 
 ## Operating Contract
 
@@ -62,8 +69,27 @@ python <skill-dir>/scripts/init_ssot.py <project-root>
 Start a run:
 
 ```bash
-python <skill-dir>/scripts/start_run.py <project-root> --title "<title>" --goal "<goal>"
+python <skill-dir>/scripts/start_run.py <project-root> --title "<title>" --goal "<goal>" --mode auto
 ```
+
+Use `--mode explore` for a local prototype, `--mode delivery` for normal product
+work, and `--mode high-assurance` for auth, payments, migrations, production data,
+deployment, or public release. Auto mode chooses from risk and cannot lower a high
+risk task. Explore runs keep only a compact state and do not create a full contract
+file.
+
+Before production edits, complete and approve the delivery contract created for the run:
+
+```bash
+python <skill-dir>/scripts/contract.py update <project-root> --why "<why>" --approach "<how>"
+python <skill-dir>/scripts/contract.py validate <project-root>
+python <skill-dir>/scripts/contract.py approve <project-root> --approved-by "<owner>"
+```
+
+The contract must include observable acceptance evidence, boundaries, prohibited
+shortcuts, infeasible paths, alternatives, divergent options, verification, and
+rollback or recovery. Do not treat fixtures, mocks, hardcoded output, manual data
+edits, or a passing build as proof when the real user path is required.
 
 Update a run:
 
@@ -76,7 +102,11 @@ Detect tests and run checks:
 ```bash
 python <skill-dir>/scripts/detect_tests.py <project-root> --write-run
 python <skill-dir>/scripts/run_checks.py <project-root> --auto
+python <skill-dir>/scripts/record_evidence.py <project-root> --level 3 --source real-path --summary "<real path evidence>"
 ```
+
+Local commands record L1 evidence. Real integrations and dogfood use require an
+explicit evidence receipt at L2-L4.
 
 Finish a run:
 
@@ -96,14 +126,19 @@ python <skill-dir>/scripts/init_agents.py <project-root> --skill-path <skill-dir
 - `medium`: user-facing behavior, shared code, APIs, data shape, integrations, project structure, or deployment config.
 - `high`: auth, payments, security, production data, migrations, irreversible operations, broad architecture, or public release.
 
-For medium/high risk, require a clear contract, verification plan, rollback or recovery story, and residual-risk report.
+For delivery and high-assurance runs, require an approved delivery contract before
+production edits. Explore runs use a compact state and must not be presented as
+production. For medium/high risk, require a clear verification plan, rollback or
+recovery story, and residual-risk report. If the contract changes, re-approval is
+required.
 {END}
 """
 
 
-def upsert_agents(root: Path, skill_path: str) -> Path:
-    path = root / "AGENTS.md"
-    block = managed_block(root, skill_path)
+def upsert_instruction(root: Path, skill_path: str, host: str = "generic", instruction_file: str = "") -> Path:
+    host = normalize_host(host)
+    path = root / instruction_file_for_host(host, instruction_file)
+    block = managed_block(root, skill_path, host)
 
     if path.exists():
         content = path.read_text(encoding="utf-8")
@@ -122,15 +157,26 @@ def upsert_agents(root: Path, skill_path: str) -> Path:
     return path
 
 
+def upsert_agents(root: Path, skill_path: str) -> Path:
+    """Backward-compatible wrapper for the original AGENTS.md behavior."""
+    return upsert_instruction(root, skill_path, "generic")
+
+
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Create or refresh project AGENTS.md for solo-company harness.")
+    parser = argparse.ArgumentParser(description="Create or refresh project instructions for solo-company harness.")
     parser.add_argument("project_root", nargs="?", default=".", help="Project root.")
     parser.add_argument("--skill-path", default="", help="Path to solo-company-harness skill.")
+    parser.add_argument(
+        "--host",
+        default="generic",
+        help="Host adapter: codex, claude-code, opencode, or generic.",
+    )
+    parser.add_argument("--instruction-file", default="", help="Override the host's project instruction filename.")
     args = parser.parse_args()
 
     root = project_root(args.project_root)
-    path = upsert_agents(root, args.skill_path)
-    print(f"agents: {path}")
+    path = upsert_instruction(root, args.skill_path, args.host, args.instruction_file)
+    print(f"instructions: {path}")
     return 0
 
 

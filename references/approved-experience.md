@@ -29,3 +29,24 @@ Evidence:
 - C:\Users\Administrator\Desktop\信息门户\docs\case-log\2026-07-02-distill-project-development-lessons.md
 
 - SKILL.md update requested: no. Keep this as reference experience.
+### 2026-07-23 - Approved Lesson
+
+Approved by: user
+Scope: Cross-project delivery, external integrations, user constraint enforcement
+Source run: manual
+
+Lessons:
+- 先验证真实用户路径，再扩展审计、重试和高级质量能力；局部测试、构建成功或模拟 Provider 不能替代真实端到端 smoke。
+- 外部服务配置是系统代码的一部分，必须版本化并在本地、测试、Docker、远端进程、反向代理和文档之间保持一致；配置漂移应被当作产品缺陷。
+- 一个生产能力只保留一个 canonical path；重复网关、重复存储和重复 secret 会造成配置漂移与责任不清。
+- 先冻结可验证的 MVP 闭环，再增加多窗口、replay、审计、策略和质量优化；传输可用性必须先于模型语义质量。
+- 当用户请求违反已批准的安全、数据完整性、验收或部署约束时，系统必须先提醒并分类为硬约束、可协商约束或建议约束；硬约束阻断，可协商约束提出修正并记录，建议约束只提示。
+- 对可逆且仍在已批准合同范围内的请求，告知用户后可自动采用修正；任何改变合同、权限、安全边界或数据保留策略的修改必须取得用户明确批准，不能静默改变。
+- 用户坚持不能覆盖安全、隐私、密钥保护、数据不可变性、真实验收和禁止伪造结果等硬约束；可接受的例外必须记录为显式项目决策，不得变成默认规则。
+
+Evidence:
+- docs/case-log/2026-07-23-phase-2b-real-visual-inventory-live-acceptance.md
+- docs/playbooks/real-path-media-delivery-gates.md
+- docs/case-log/2026-07-22-distill-cross-project-delivery-lesson.md
+
+- SKILL.md update requested: yes. Review and patch the core workflow if this changes operating behavior.
